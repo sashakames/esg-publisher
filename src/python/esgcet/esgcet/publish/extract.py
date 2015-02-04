@@ -590,6 +590,11 @@ def extractFromFile(dataset, openfile, fileobj, session, cfHandler, aggdimName=N
         if aggdimName.lower()=="time" or (openfile.hasAttribute("axis", aggdimName) and openfile.getAttribute("axis", aggdimName)=="T"):
             if abs(aggvarFirst)>1.e12 or abs(aggvarLast)>1.e12:
                 dataset.warning("File: %s has time range: [%f, %f], looks bogus."%(fileVersion.location, aggvarFirst, aggvarLast), WARNING_LEVEL, AGGREGATE_MODULE)
+    else:
+        aggvarFirst = 0
+        aggvarLast = 0
+        aggvarLen = 1
+        aggvarunits = "count"
 
     if aggdimName is not None and not openfile.hasVariable(aggdimName):
         info("Aggregate dimension not found: %s"%aggdimName)
