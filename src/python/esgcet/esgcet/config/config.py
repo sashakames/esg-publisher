@@ -15,6 +15,8 @@ from esgcet.messaging import debug, info, warning, error, critical, exception
 # SQLAlchemy versions <0.6 have protocol "postgres", >=0.6 use "postgresql"
 from sqlalchemy import __version__ as sqlalchemy_version
 
+from xmlconfig import get_xml_config
+
 # Handler onfiguration options, one for each handler type
 PROJECT_NAME_OPTION = "project_handler_name"
 FORMAT_NAME_OPTION = "format_handler_name"
@@ -35,6 +37,15 @@ class SaneConfigParser(SafeConfigParser):
     def __init__(self, name, defaults=None):
         SafeConfigParser.__init__(self, defaults=defaults)
         self.name = name
+        self.xmlconf = None
+    
+    def loadXml(self, xmlfn):
+        
+        try:
+
+            self.xmlconf = get_xml_config(xmlfn)
+        except:
+            raise ESGPublishError("XML config file %s not found"%xmlfn)
 
     def get(self, section, option, raw=False, vars=None, **options):
         if vars is None:
@@ -298,6 +309,12 @@ def loadConfig(configFile):
 
     if config is None:
         config = loadConfig1(configFile)
+
+    xmlfn = config.get("DEFAULT", "xml_config_file", default=None)
+
+    if not xmlfn is None:
+        config.loadXml(xmlfn)
+
     return config
 
 def initLogging(section, override_sa=None, log_filename=None):

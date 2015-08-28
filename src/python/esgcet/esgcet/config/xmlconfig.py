@@ -34,7 +34,7 @@ def get_fvalue(ele):
 
     
 
-def get_config(fn):
+def get_xml_config(fn):
 
     doc = etree.parse(fn)
 
@@ -45,6 +45,3 @@ def get_config(fn):
     return fields
 
 
-import sys
-
-print str(get_config(sys.argv[1]))
