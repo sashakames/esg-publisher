@@ -154,7 +154,7 @@ def republishDataset(result, Session, thredds, gatewayOp):
 def main(argv):
 
     try:
-        args, lastargs = getopt.getopt(argv, "hi:", ['database-delete', 'database-only', 'echo-sql', 'map=', 'mapdir=', 'no-republish', 'no-thredds-reinit', 'skip-gateway', 'skip-index', 'las', 'log=', 'rest-api', 'skip-thredds', 'sync-thredds', 'use-list='])
+        args, lastargs = getopt.getopt(argv, "hi:", ['database-delete', 'database-only', 'echo-sql', 'map=', 'mapdir=', 'no-republish', 'no-thredds-reinit', 'skip-gateway', 'skip-index', 'las', 'log=', 'rest-api', 'skip-thredds', 'sync-thredds', 'use-list=', 'delete', 'retract'])
     except getopt.error:
         print sys.exc_value
         print usage
