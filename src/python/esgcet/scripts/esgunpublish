@@ -18,7 +18,7 @@ from esgcet.query import queryDatasetMap
 
 
 usage = """Usage:
-    esgunpublish [options] dataset_name [dataset_name ...]
+    esgunpublish [options] --delete|--retract|--skip-gateway dataset_name [dataset_name ...]
 
     -or-
 
@@ -57,10 +57,15 @@ Arguments:
     dataset_name: The string name of the dataset(s) to be unpublished. To indicate a specific version,
     use the syntax dataset_name#n. If no version is indicated, the latest version is deleted.
 
+    One of the following three switch-style arguments is REQUIRED
+
+    --delete:  The dataset entry in SOLR is removed and will no longer appear in search results
+    --retract:  The dataset entry will be flagged as "retracted" in SOLR and files 
+    --skip-index: Perform local (node) operations, skip SOLR index dataset delete.
+
+
 Options:
 
-    --delete
-    --retract
 
     --database-delete: Delete the associated local database entry for this dataset. By default, the
       database information is left intact.
@@ -103,8 +108,6 @@ Options:
         https://HOST/esg-search/ws, where HOST is derived from configuration option ``hessian_service_url''.
 
         Note: With this option, the dataset_name should have the form 'dataset_id|data_node'.
-
-    --skip-index: Perform local (node) operations, skip SOLR index dataset delete.
 
     --skip-thredds: Do not remove associated THREDDS catalogs, or reinitialize the TDS server.
       By default, THREDDS catalogs are removed.
@@ -198,7 +201,7 @@ def main(argv):
         elif flag=='--delete':
             gatewayOp = DELETE
         elif flag=='--retract':
-            gatewayOp = RETRACT
+            gatewayOp = UNPUBLISH  # unpublish means retract
         elif flag=='--las':
             las = True
         elif flag=='--log':
@@ -217,8 +220,6 @@ def main(argv):
             useList = True
             useListPath = arg
 
-    if gatewayOp!=NO_OPERATION and unpublishOnGateway:
-        gatewayOp = UNPUBLISH
 
     # Load the configuration and set up a database connection
     config = loadConfig(init_dir)
