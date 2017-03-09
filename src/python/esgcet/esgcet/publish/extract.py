@@ -252,7 +252,8 @@ def extractFromDataset(datasetName, fileIterator, dbSession, handler, cfHandler,
             info("Assigned PID to dataset %s.v%s: %s " % (datasetName, newVersion, dataset_pid))
 
         # if project uses citation, build citation url
-        citation_url = handler.get_citation_url(section, config, datasetName, newVersion)
+        project_config_section = 'config:%s' %context.get('project')
+        citation_url = handler.get_citation_url(project_config_section, config, datasetName, newVersion)
 
         newDsetVersionObj = DatasetVersionFactory(dset, version=newVersion, creation_time=createTime, comment=comment, tech_notes=datasetTechNotes,
                                                   tech_notes_title=datasetTechNotesTitle, pid=dataset_pid, citation_url=citation_url)
@@ -742,6 +743,8 @@ def extractFromFile(dataset, openfile, fileobj, session, handler, cfHandler, agg
         # Set coordinate axis range and type if applicable
         if len(varshape)==1:
             var0 = openfile.getVariable(varname, index=0)
+            if var0 is None:
+                continue
             varn = openfile.getVariable(varname, index=-1)
             if cfHandler.axisIsLatitude(filevar):
                 filevar.coord_range = genCoordinateRange(var0, varn)
