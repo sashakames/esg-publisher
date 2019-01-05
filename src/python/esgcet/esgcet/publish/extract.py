@@ -271,8 +271,8 @@ def extractFromDataset(datasetName, fileIterator, dbSession, handler, cfHandler,
         try:
             for var in dset.variables:
                 session.delete(var)
-        except IntegrityError as ie:
-            debug("sqlalchemy IntegrityError: " + str(ie))
+        except Exception as ie:
+            debug("sqlalchemy IntegrityError (?): " + str(ie)
             raise ESGPublishError("Error in creating dataset version, did you already publish this version to the database?")
         newDsetVersionObj.files.extend(fobjs)
         event = Event(datasetName, newDsetVersionObj.version, eventFlag)
