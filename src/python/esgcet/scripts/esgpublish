@@ -21,6 +21,8 @@ from esgcet.model import Dataset
 from esgcet.query import queryDatasetMap
 from esgcet.logon import check_cert, logon, get_myproxy_value_from_config
 
+import esgcet
+
 
 usage = """Usage:
     esgpublish [operation] [options] directory [directory ...]
@@ -272,6 +274,9 @@ Options:
         Validate the published catalog against a schema, on the server side. Implies --rest-api.
         By default no schema-specific validation is performed. The schema_name for CMIP5 is 'cmip5'.
 
+    --version
+        Print version of the software and exit.
+
     --version-list versionlist
         Use the version indicated in the version list. versionlist is a file, each line of which
         has the form:
@@ -321,6 +326,8 @@ def yield_parsed_mapfiles(mapfileDir):
     yields (dmap, extraFields) for each valid mapfile found under starting directory
     """
     for root, dirs, files in os.walk(mapfileDir, followlinks=True):
+        dirs.sort()
+        files.sort()
         for mapfile in files:
             try:
                 dmap, extraFields = readDatasetMap(os.path.join(root, mapfile), parse_extra_fields=True)
@@ -336,7 +343,7 @@ def yield_parsed_mapfiles(mapfileDir):
 def main(argv):
 
     try:
-        args, lastargs = getopt.getopt(argv, "a:cdehi:m:p:ru", ['append', 'commit-every=', 'create', 'create-cim', 'create-cim-only', 'dataset=', 'delete-files', 'echo-sql', 'experiment=', 'filter=', 'help', 'keep-credentials', 'keep-version', 'log=', 'map=', 'message=', 'model=', 'offline',  'parent=', 'per-time', 'per-variable', 'project=', 'property=', 'publish', 'new-version=', 'no-create-cim', 'no-thredds-reinit', 'noscan', 'read-directories', 'read-files', 'rename-files', 'replace', 'replica=', 'rest-api', 'service=', 'set-replica', 'summarize-errors', 'test', 'thredds', 'thredds-reinit', 'update', 'use-existing=', 'use-list=', 'validate=', 'version-list=', 'verbose-cim-errors', 'nodbwrite'])
+        args, lastargs = getopt.getopt(argv, "a:cdehi:m:p:ru", ['append', 'commit-every=', 'create', 'create-cim', 'create-cim-only', 'dataset=', 'delete-files', 'echo-sql', 'experiment=', 'filter=', 'help', 'keep-credentials', 'keep-version', 'log=', 'map=', 'message=', 'model=', 'offline',  'parent=', 'per-time', 'per-variable', 'project=', 'property=', 'publish', 'new-version=', 'no-create-cim', 'no-thredds-reinit', 'noscan', 'read-directories', 'read-files', 'rename-files', 'replace', 'replica=', 'rest-api', 'service=', 'set-replica', 'summarize-errors', 'test', 'thredds', 'thredds-reinit', 'update', 'use-existing=', 'use-list=', 'validate=', 'version-list=', 'verbose-cim-errors', 'nodbwrite', 'version'])
     except getopt.error:
         print sys.exc_value
         print usage
@@ -517,6 +524,8 @@ def main(argv):
             restApi = True
         elif flag=='--version-list':
             versionList = arg
+        elif flag=='--version':
+            print "esg-publisher (esgcet) version {}".format(esgcet.__version__)
 
     if createCimOnly and not mapfileProvided:
         raise ESGPublishError("--create-cim-only can only be used with --map")
@@ -650,6 +659,8 @@ def main(argv):
         directoryMap = None
         extraFields = None
 
+        validate_standard_name = config.getboolean(project_section, 'validate_standard_name', default=True)
+
         # Process all mapfiles in a directory
         if mapfileDir is not None:
             for dmap, extraFields in yield_parsed_mapfiles(mapfileDir):
@@ -665,7 +676,7 @@ def main(argv):
                                                        filefilt, initcontext, offline, properties, keepVersion=keepVersion, newVersion=version,
                                                        extraFields=extraFields, masterGateway=masterGateway, comment=message, readFiles=readFiles,
                                                        nodbwrite=nodbwrite, pid_connector=pid_connector, test_publication=test_publication,
-                                                       handlerExtraArgs=handler_extra_args, commitEvery=commitEvery)
+                                                       handlerExtraArgs=handler_extra_args, commitEvery=commitEvery, validate_standard_name=validate_standard_name)
 
                     if (not nodbwrite):
                         result = publishDatasetList(datasetNames, Session, publish=publish, thredds=thredds, las=las, parentId=parent, service=service,
@@ -743,7 +754,7 @@ def main(argv):
                                                initcontext, offline, properties, keepVersion=keepVersion, newVersion=version, extraFields=extraFields,
                                                masterGateway=masterGateway, comment=message, readFiles=readFiles, nodbwrite=nodbwrite,
                                                pid_connector=pid_connector, test_publication=test_publication, handlerExtraArgs=handler_extra_args,
-                                               commitEvery=commitEvery)
+                                               commitEvery=commitEvery, validate_standard_name=validate_standard_name)
 
             if (not nodbwrite):
                 result = publishDatasetList(datasetNames, Session, publish=publish, thredds=thredds, las=las, parentId=parent, service=service,

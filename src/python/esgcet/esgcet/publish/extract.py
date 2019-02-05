@@ -8,6 +8,9 @@ from esgcet.model import *
 from esgcet.exceptions import *
 from esgcet.config import splitLine, getConfig
 from utility import getTypeAndLen, issueCallback, compareFiles, checksum, extraFieldsGet
+from esgcet.model import StandardName
+
+from sqlalchemy.exc import IntegrityError
 
 NAME=0
 LENGTH=1
@@ -273,6 +276,8 @@ def extractFromDataset(datasetName, fileIterator, dbSession, handler, cfHandler,
         except IntegrityError as ie:
             debug("sqlalchemy IntegrityError: " + str(ie))
             raise ESGPublishError("Error in creating dataset version, did you already publish this version to the database?")
+        except Exception as e:
+            raise ESGPublishError("Error in creating dataset version, " +str(e))
         newDsetVersionObj.files.extend(fobjs)
         event = Event(datasetName, newDsetVersionObj.version, eventFlag)
         dset.events.append(event)
@@ -354,6 +359,12 @@ def createDataset(dset, pathlist, session, handler, cfHandler, configOptions, ag
         if not offline:
             info("Scanning %s"%path)
             f = handler.openPath(path)
+            try:
+                handler.validateFile(f)
+            except:
+                session.rollback()
+                session.close()
+                raise
             extractFromFile(dset, f, file, session, handler, cfHandler, aggdimName=aggregateDimensionName, varlocate=varlocate, exclude_variables=exclude_variables, perVariable=perVariable, **context)
             f.close()
 
@@ -485,6 +496,12 @@ def updateDatasetVersion(dset, dsetVersion, pathlist, session, handler, cfHandle
             if not offline:
                 info("Scanning %s"%path)
                 f = handler.openPath(path)
+                try:
+                    handler.validateFile(f)
+                except:
+                    session.rollback()
+                    session.close()
+                    raise
                 extractFromFile(dset, f, fileObj, session, handler, cfHandler, aggdimName=aggregateDimensionName, varlocate=varlocate, exclude_variables=exclude_variables, perVariable=perVariable, **context)
                 f.close()
             else:
@@ -865,7 +882,7 @@ def createAggregateVar(var, varattr, aggregateDimensionName):
             aggVar.file_variables.append(aggfilevar)
     return aggVar
 
-def aggregateVariables(datasetName, dbSession, aggregateDimensionName=None, cfHandler=None, progressCallback=None, stopEvent=None, datasetInstance=None):
+def aggregateVariables(datasetName, dbSession, aggregateDimensionName=None, cfHandler=None, progressCallback=None, stopEvent=None, datasetInstance=None, validate_standard_name=True):
     """
     Aggregate file variables into variables, and add to the database. Populates the database tables:
 
@@ -1171,10 +1188,22 @@ def aggregateVariables(datasetName, dbSession, aggregateDimensionName=None, cfHa
     nvars = len(dset.variables)
     for var in dset.variables:
         attr = lookupAttr(var, 'standard_name')
+
         if (attr is not None):
-            if (cfHandler is not None) and (not cfHandler.validateStandardName(attr)):
+            if validate_standard_name and (cfHandler is not None) and (not cfHandler.validateStandardName(attr)):
                 info("Invalid standard name: %s for variable %s"%(attr, var.short_name))
             else:
+                # need to add standard_name to postgres if not validated
+                if not validate_standard_name:
+                    sname = session.query(StandardName).filter_by(name=attr).first()
+                    if sname is None:
+                        try:
+                            units = lookupAttr(var, 'units')
+                        except:
+                            units = ''
+                        standard_name = StandardName(attr, units)
+                        session.add(standard_name)
+
                 var.standard_name = attr
         seq += 1
         try:
