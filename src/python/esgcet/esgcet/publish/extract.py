@@ -784,6 +784,9 @@ def extractFromFile(dataset, openfile, fileobj, session, handler, cfHandler, agg
 
         # Set coordinate axis range and type if applicable
         if len(varshape)==1:
+
+            if varname == "expt_label":
+                continue            
             var0 = openfile.getVariable(varname, index=0)
             if var0 is None:
                 continue
