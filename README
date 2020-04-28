@@ -13,6 +13,8 @@ README:
 
 ESGF Publisher
 
+For the  next-gen ESGF architecture circa 2020  (v5) publisher:  git checkout gen-five
+
 Detailed instructions on publishing are on the ESGF confluence site.  This is access controlled to Federation members.
 
 https://acme-climate.atlassian.net/wiki/display/ESGF/Guide+to+ESGF+Publishing+and+Best+Practices
