@@ -106,7 +106,7 @@ def pid_flow_code(dataset_recs):
     except Exception as e:
         print("WARNING: PID module exception encountered! {}".format(str(e)))
         traceback.print_exc()
-        
+
     pid_connector.force_finish_messaging_thread()
     return None, None
 

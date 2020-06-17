@@ -90,7 +90,9 @@ def get_file(dataset_rec, mapdata, fn_trid):
         exit(1)
     
     ret["url"] = gen_urls(DATA_ROOTS[proj_root], rel_path)
-
+    ret.pop("number_of_files")
+    ret.pop("datetime_start")
+    ret.pop("datetime_end")
     return ret
     # need to match up the 
 
