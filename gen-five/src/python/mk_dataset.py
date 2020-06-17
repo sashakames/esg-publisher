@@ -90,9 +90,14 @@ def get_file(dataset_rec, mapdata, fn_trid):
         exit(1)
     
     ret["url"] = gen_urls(DATA_ROOTS[proj_root], rel_path)
-    ret.pop("number_of_files")
-    ret.pop("datetime_start")
-    ret.pop("datetime_end")
+    if "number_of_files" in ret:
+        ret.pop("number_of_files")
+    else:
+        eprint("WARNING: no files present")
+    if "datetime_start" in ret:
+        ret.pop("datetime_start")
+        ret.pop("datetime_end")
+
     return ret
     # need to match up the 
 
@@ -135,8 +140,10 @@ def update_metadata(record, scanobj):
         if "time" in axes:
             time_obj = axes["time"]
             time_units = time_obj["units"]
-            tu_parts = time_units.split()
-            if tu_parts[0] == "days" and tu_parts[1] == "since":
+            tu_parts = []
+            if type(time_units) is str:
+                tu_parts = time_units.split()
+            if len(tu_parts) > 2 and tu_parts[0] == "days" and tu_parts[1] == "since":
                 proc_time = True
                 tu_date = tu_parts[2] # can we ignore time component?
                 if "subaxes" in time_obj:
