@@ -2,7 +2,7 @@ import sys, json
 from settings import PID_CREDS, DATA_NODE, PID_PREFIX, PID_EXCHANGE, URL_Templates, HTTP_SERVICE, CITATION_URLS, PID_URL, TEST_PUB
 import traceback
 
-def establish_pid_connection(pid_prefix, test_publication,  publish=True):
+def establish_pid_connection(pid_prefix, test_publication):
 
     """Establish a connection to the PID service
 
@@ -11,9 +11,6 @@ def establish_pid_connection(pid_prefix, test_publication,  publish=True):
 
     test_publication
         Boolean to flag PIDs as test
-
-    publish
-        Flag to trigger publication and unpublication
     """
     try:
         import esgfpid
@@ -45,12 +42,18 @@ def check_pid_connection(pid_prefix, pid_connector, send_message=False):
     """
     Check the connection to the PID rabbit MQ
     Raise an Error if connection fails
+
+     pid_prefix
+        PID prefix to be used for given project
+
+    pid_connector
+        Output of previous establish_pid_connection call
     """
     pid_queue_return_msg = pid_connector.check_pid_queue_availability(send_message=send_message)
     if pid_queue_return_msg is not None:
         raise Exception("Unable to establish connection to PID Messaging Service. Please check your esg.ini for correct pid_credentials.")
 
-    pid_connector = establish_pid_connection(pid_prefix, TEST_PUB,  publish=True)
+#    pid_connector = establish_pid_connection(pid_prefix, TEST_PUB,  publish=True)
 
 
 
@@ -63,10 +66,11 @@ def pid_flow_code(dataset_recs):
 
     dsrec = dataset_recs[-1]
     dset = dsrec['master_id']
+
     version_number = dsrec['version']
     is_replica = dsrec["replica"]
 
-    pid_connector = establish_pid_connection(PID_PREFIX, TEST_PUB, publish=False)
+    pid_connector = establish_pid_connection(PID_PREFIX, TEST_PUB)
     pid_connector.start_messaging_thread()
 
     dataset_pid = None
@@ -134,6 +138,8 @@ def rewrite_json(fname, recs):
 def main(args):
 
     fname = args[0]
+
+    PID_CREDS[0]['password'] = "B8a*:!*6$7oW$G'`3!:G"
     res = json.load(open(fname))
     pid_connector, pid = pid_flow_code(res)
 

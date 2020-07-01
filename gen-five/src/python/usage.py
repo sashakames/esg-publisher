@@ -25,5 +25,7 @@ esgpublish [options] [--map] mapfile|map-directory
     
     --certificate (-c) <pem-file>
         Use the following certificate file in .pem form for publishing (these are generate via a myproxy logon)
+    --project
+        set / override the project for this, for use with selecting the DRS or specific features, eg. PrePARE, PID
          
 """

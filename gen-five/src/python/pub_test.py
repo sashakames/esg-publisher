@@ -2,9 +2,9 @@ from pub_client import publisherClient
 
 import list2json, sys, json
 
-from settings import INDEX_NODE, CERT_FN
+from settings import INDEX_NODE, CERT_FN, DEBUG
 
-hostname = INDEX_NODE
+#hostname = INDEX_NODE
 cert_fn = CERT_FN
 
 ARGS = 1
@@ -23,6 +23,14 @@ def main(args):
 
     d = json.load(open(args[0]))
 
+    try:
+        hostname = d[-1]['index_node']
+    except Exception as e:
+        if DEBUG:
+            print(e)
+            traceback.print_exc()
+        print('Index node value missing from record!')
+        exit(-1)
     for rec in d:
 
         new_xml = list2json.gen_xml(rec)

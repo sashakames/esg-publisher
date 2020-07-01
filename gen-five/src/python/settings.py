@@ -26,8 +26,8 @@ GA = { 'CMIP6' : ['frequency',
 
 
 # These below are server-specific settings
-DATA_NODE = "greyworm1-rh7.llnl.gov"
-INDEX_NODE = "esgf-fedtest.llnl.gov"
+DATA_NODE = ""
+INDEX_NODE = ""
 
 # the prefix is found in the published urls that are backed by the path prefix below
 DATA_ROOTS = {'/esg/data' : 'esgf_data',
@@ -65,3 +65,6 @@ CITATION_URLS = { 'CMIP6' : {'test' :
 
 PID_URL = 'http://hdl.handle.net/{}|PID|pid'  # PIDs include hdl:
 TEST_PUB = True
+
+PROJECT = ""  # project setting.  This would be used to consider some project-specific features, eg. for CMIP6
+SET_REPLICA = False

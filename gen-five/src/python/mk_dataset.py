@@ -22,6 +22,11 @@ def unpack_values(invals):
 
 def get_dataset(mapdata, scandata):
 
+    if DATA_NODE == "":
+        raise BaseException("Missing data node!")
+    if INDEX_NODE == "":
+        raise BaseException("Missing index node!")
+
     master_id, version = mapdata.split('#')
 
     parts = master_id.split('.')
