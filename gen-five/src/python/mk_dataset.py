@@ -3,7 +3,8 @@ from mapfile import *
 
 from datetime import datetime, timedelta
 
-from settings import DEBUG, DRS, GA, DATA_NODE, INDEX_NODE, URL_Templates, DATA_ROOTS
+from settings import DEBUG, DRS, GA, DATA_NODE, INDEX_NODE, URL_Templates, DATA_ROOTS, GA_DELIMITED
+
 
 
 EXCLUDES = [""]
@@ -44,6 +45,7 @@ def get_dataset(mapdata, scandata):
     if key in GA:
         for val in GA[key]:
             if val in scandata:
+                if val in GA_DELIMITED[key]
                 d[val] = scandata[val]
 
 
@@ -53,10 +55,9 @@ def get_dataset(mapdata, scandata):
     d['master_id'] = master_id
     d['instance_id'] = master_id + '.v' + version
     d['id'] = d['instance_id'] + '|' + d['data_node']
-    if not 'title' in d:
-        d['title'] = d['master_id']
-    else:
-        d['title'] = '{}: {}'.format(d['title'], d['master_id'])
+    if 'title' in d:
+        d['short_description'] = d['title']
+    d['title'] = d['master_id']
     d['replica'] = 'false' # set replica
     d['latest'] = 'true'
     d['type'] = 'Dataset'

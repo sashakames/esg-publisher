@@ -23,7 +23,7 @@ GA = { 'CMIP6' : ['frequency',
                      'further_info_url',
                      'activity_id',
                      'data_specs_version', 'title']}
-
+GA_DELIMITED = { 'CMIP6' : { 'source_type' : ' ', 'activity_id' : ' ', 'realm' : ' '  }}
 
 # These below are server-specific settings
 DATA_NODE = ""
