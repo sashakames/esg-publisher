@@ -41,16 +41,18 @@ def get_dataset(mapdata, scandata):
                 eprint("WARNING: {} does not agree!".format(f))
         d[f] = parts[i]
 
-
+    # handle Global attributes if defined for the project
     if projkey in GA:
         for facetkey in GA[projkey]:
+            # did we find a GA in the data by the the key name
             if facetkey in scandata:
                 facetval = scandata[facetkey]
-                if facet in GA_DELIMITED[projkey]:
+                # is this a delimited attribute ?
+                if facetkey in GA_DELIMITED[projkey]:
                     delimiter = GA_DELIMITED[projkey][facetkey]
-                    d[val] = facetval.split(delimiter)
+                    d[facetkey] = facetval.split(delimiter)
                 else:
-                    d[val] = facetval
+                    d[facetkey] = facetval
 
 
     d['data_node'] = DATA_NODE
