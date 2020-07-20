@@ -31,8 +31,8 @@ def get_dataset(mapdata, scandata):
     master_id, version = mapdata.split('#')
 
     parts = master_id.split('.')
-    key = parts[0]
-    facets = DRS[key]
+    projkey = parts[0]
+    facets = DRS[projkey]
     d = {}
     for i, f in enumerate(facets):
         if f in scandata:
@@ -42,16 +42,20 @@ def get_dataset(mapdata, scandata):
         d[f] = parts[i]
 
 
-    if key in GA:
-        for val in GA[key]:
-            if val in scandata:
-                if val in GA_DELIMITED[key]
-                d[val] = scandata[val]
+    if projkey in GA:
+        for facetkey in GA[projkey]:
+            if facetkey in scandata:
+                facetval = scandata[facetkey]
+                if facet in GA_DELIMITED[projkey]:
+                    delimiter = GA_DELIMITED[projkey][facetkey]
+                    d[val] = facetval.split(delimiter)
+                else:
+                    d[val] = facetval
 
 
     d['data_node'] = DATA_NODE
     d['index_node'] = INDEX_NODE
-    DRSlen = len(DRS[key])
+    DRSlen = len(DRS[projkey])
     d['master_id'] = master_id
     d['instance_id'] = master_id + '.v' + version
     d['id'] = d['instance_id'] + '|' + d['data_node']
@@ -61,8 +65,13 @@ def get_dataset(mapdata, scandata):
     d['replica'] = 'false' # set replica
     d['latest'] = 'true'
     d['type'] = 'Dataset'
-    d['project'] = key
+    d['project'] = projkey
     d['version'] = version
+
+    fmat_list = ['%({})s'.format(x) for x in DRS[projkey]]
+
+    d['dataset_id_template_'] = '.'.join(fmat_list)
+    d['directory_format_template_'] = '/root' + '/'.join(fmat_list)
 
     return d
 
