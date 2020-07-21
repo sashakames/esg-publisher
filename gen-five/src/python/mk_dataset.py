@@ -53,6 +53,15 @@ def get_dataset(mapdata, scandata):
                     d[facetkey] = facetval.split(delimiter)
                 else:
                     d[facetkey] = facetval
+        # would we ever combine mapped and delimited facets?
+        for facetkey in GA_MAPPED[projkey]:
+            if facetkey in scandata:
+                facetval = scandata[facetkey]
+                d[facetkey] = facetval
+            else:
+                eprint("WARNING: GA to be mapped {} is missing!".format(facetkey))
+        for facetkey in CONST_ATTR[projkey]:
+            d[facetkey] = CONST_ATTR[projkey][facetkey]
 
 
     d['data_node'] = DATA_NODE
@@ -70,10 +79,10 @@ def get_dataset(mapdata, scandata):
     d['project'] = projkey
     d['version'] = version
 
-    fmat_list = ['%({})s'.format(x) for x in DRS[projkey]]
+    fmat_list = ['%({})s'.format(x) for x in DRS[projkey] ]
 
     d['dataset_id_template_'] = '.'.join(fmat_list)
-    d['directory_format_template_'] = '/root' + '/'.join(fmat_list)
+    d['directory_format_template_'] = '/%(root)s/{}/%(version)s'.format('/'.join(fmat_list))
 
     return d
 
@@ -135,6 +144,7 @@ def update_metadata(record, scanobj):
             record["variable_long_name"] = var_rec["long_name"]
             record["cf_standard_name"] = var_rec["standard_name"]
             record["variable_units"] = var_rec["units"]
+            record["variable"] = vid
         else:
             eprint("TODO check project settings for variable extraction")
             record["variable"] = "Multiple"
