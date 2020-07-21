@@ -54,9 +54,10 @@ def get_dataset(mapdata, scandata):
                 else:
                     d[facetkey] = facetval
         # would we ever combine mapped and delimited facets?
-        for facetkey in GA_MAPPED[projkey]:
-            if facetkey in scandata:
-                facetval = scandata[facetkey]
+        for gakey in GA_MAPPED[projkey]:
+            if gakey in scandata:
+                facetkey = GA_MAPPED[projkey][gakey]
+                facetval = scandata[gakey]
                 d[facetkey] = facetval
             else:
                 eprint("WARNING: GA to be mapped {} is missing!".format(facetkey))
