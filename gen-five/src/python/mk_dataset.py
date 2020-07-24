@@ -87,8 +87,14 @@ def get_dataset(mapdata, scandata):
 
     return d
 
+def format_template(template, root, rel):
+    if "Globus" in template:
+        return template.format(GLOBUS_UUID, root, rel)
+    else:
+        return template.format(DATA_NODE, root, rel)
+
 def gen_urls(proj_root, rel_path):
-    return  [template.format(DATA_NODE, proj_root, rel_path) for template in URL_Templates]
+    return  [format_template(DATA_NODE, proj_root, rel_path) for template in URL_Templates]
 
 
 
