@@ -75,3 +75,4 @@ PROJECT = ""  # project setting.  This would be used to consider some project-sp
 SET_REPLICA = False
 
 GLOBUS_UUID = "415a6320-e49c-11e5-9798-22000b9da45e"
+DATA_TRANSFER_NODE = "aimsdtn4.llnl.gov"

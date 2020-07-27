@@ -3,7 +3,7 @@ from mapfile import *
 
 from datetime import datetime, timedelta
 
-from settings import DEBUG, DRS, GA, DATA_NODE, INDEX_NODE, URL_Templates, DATA_ROOTS, GA_DELIMITED
+from settings import *
 
 
 
@@ -90,6 +90,8 @@ def get_dataset(mapdata, scandata):
 def format_template(template, root, rel):
     if "Globus" in template:
         return template.format(GLOBUS_UUID, root, rel)
+    elif "gsiftp" in template:
+        return template.format(DATA_TRANSFER_NODE, root, rel)
     else:
         return template.format(DATA_NODE, root, rel)
 
@@ -169,8 +171,8 @@ def update_metadata(record, scanobj):
         if "lon" in axes:
             lon = axes["lon"]
             geo_units.append(lon["units"])
-            record["east_degrees"] = lat["values"][-1]
-            record["west_degrees"] = lat["values"][0]
+            record["east_degrees"] = lon["values"][-1]
+            record["west_degrees"] = lon["values"][0]
         if "time" in axes:
             time_obj = axes["time"]
             time_units = time_obj["units"]
