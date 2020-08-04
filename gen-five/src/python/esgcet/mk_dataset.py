@@ -1,9 +1,9 @@
 import sys, json
-from mapfile import *
+from .mapfile import *
 
 from datetime import datetime, timedelta
 
-from settings import *
+from .settings import *
 
 
 
