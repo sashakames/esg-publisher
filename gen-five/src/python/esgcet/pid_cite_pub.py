@@ -136,7 +136,7 @@ def rewrite_json(fname, recs):
     with open(fname, 'w') as f:
         f.write(json.dumps(recs, indent=1))
 
-def main(args):
+def run(args):
 
     fname = args[0]
 
@@ -158,12 +158,12 @@ def main(args):
     pid_connector.finish_messaging_thread()
 #    print("after finish") DEBUG
 
-if __name__ == '__main__':
-    main(sys.argv[1:])
+def main():
+    run(sys.argv[1:])
 
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    main()
 
 #    "xlink":["http://cera-www.dkrz.de/WDCC/meta/CMIP6/CMIP6.RFMIP.MOHC.HadGEM3-GC31-LL.rad-irf.r1i1p3f3.Efx.rld.gn.v20191030.json|Citation|citation",
  #         "http://hdl.handle.net/hdl:21.14100/2720a03c-479a-3cdf-99e2-1265d90d51ae|PID|pid"],
-
-
-
