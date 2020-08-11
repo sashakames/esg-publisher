@@ -34,6 +34,8 @@ setup(
     scripts = [
     ],
     zip_safe = False,                   # Migration repository must be a directory
+    entry_points={'console_scripts': ['esgpidcitepub=esgcet.pid_cite_pub:main']},
+
 )
 
 

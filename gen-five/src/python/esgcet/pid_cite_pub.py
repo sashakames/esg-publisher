@@ -1,5 +1,5 @@
 import sys, json
-from settings import PID_CREDS, DATA_NODE, PID_PREFIX, PID_EXCHANGE, URL_Templates, HTTP_SERVICE, CITATION_URLS, PID_URL, TEST_PUB
+from .settings import PID_CREDS, DATA_NODE, PID_PREFIX, PID_EXCHANGE, URL_Templates, HTTP_SERVICE, CITATION_URLS, PID_URL, TEST_PUB
 import traceback
 
 def establish_pid_connection(pid_prefix, test_publication):
@@ -51,7 +51,8 @@ def check_pid_connection(pid_prefix, pid_connector, send_message=False):
     """
     pid_queue_return_msg = pid_connector.check_pid_queue_availability(send_message=send_message)
     if pid_queue_return_msg is not None:
-        raise Exception("Unable to establish connection to PID Messaging Service. Please check your esg.ini for correct pid_credentials.")
+        errmsg = str(pid_queue_return_msg)
+        raise Exception("Unable to establish connection to PID Messaging Service. Please check your esg.ini for correct pid_credentials. {}".format(errmsg))
 
 #    pid_connector = establish_pid_connection(pid_prefix, TEST_PUB,  publish=True)
 
@@ -139,7 +140,6 @@ def main(args):
 
     fname = args[0]
 
-    PID_CREDS[0]['password'] = "B8a*:!*6$7oW$G'`3!:G"
     res = json.load(open(fname))
     pid_connector, pid = pid_flow_code(res)
 

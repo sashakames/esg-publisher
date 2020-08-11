@@ -52,13 +52,22 @@ URL_Templates = ["https://{}/thredds/fileServer/{}/{}|application/netcdf|HTTPSer
 
 #        handle-esgf-trusted.dkrz.de | 5671 | esgf-pid | esgf-publisher 
 
-PID_CREDS = [ {'url': 'handle-esgf-trusted.dkrz.de',
-             'port': 5671,
+# PID_CREDS = [ {'url': 'handle-esgf-trusted.dkrz.de',
+#              'port': 5671,
+#              'vhost': 'esgf-pid',
+#              'user': 'esgf-publisher',
+#              'password': "",
+#              'ssl_enabled': True,
+#              'priority': 1}]
+
+PID_CREDS = [ {'url': 'aims4.llnl.gov', # 'handle-esgf-trusted.dkrz.de',
+             'port': 7070,  # 5671,
              'vhost': 'esgf-pid',
              'user': 'esgf-publisher',
-             'password': "",
+             'password': "_EarTH!S9uAr3.PhoB0S!",
              'ssl_enabled': True,
-             'priority': 1}] 
+             'priority': 1}]
+
 
 PID_PREFIX = '21.14100' # for testing use CMIP6,  need to be project-specific
 PID_EXCHANGE = 'esgffed-exchange'
