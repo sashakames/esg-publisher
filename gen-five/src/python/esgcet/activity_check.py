@@ -16,6 +16,9 @@ class FieldCheck(object):
 
     def check_fields(self, source_id, activity_id):
 
+
+        if source_id not in self.sid_dict:
+            return False
         rec = self.sid_dict[source_id]
 
         return activity_id in rec["activity_participation"]
@@ -35,6 +38,8 @@ def main(args):
     except Exception as e:
         print("Error opening input json format for {}: ".format(args[0],e))
         exit(1)
+
+    # Refactor for several cases: (1) standalone with main() (2) called by larger publisher module (3) query results from search
 
     src_id = input_rec[IDX]['source_id']
     act_id = input_rec[IDX]['activity_drs']
