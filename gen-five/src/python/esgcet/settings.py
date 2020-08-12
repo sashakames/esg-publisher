@@ -1,4 +1,3 @@
-DEBUG = False
 
 # these settings are presently managed within esg.ini and esg.<project>.ini
 
@@ -30,23 +29,41 @@ CONST_ATTR =  { 'CMIP6' : { 'model_cohort' : 'registered' }}
 GA_MAPPED = { 'CMIP6' : { 'experiment' : 'experiment_title'} }
 
 
-# These below are server-specific settings
+# These below are server-specific settings - should be overridden by ConfigParser or command line args
 DATA_NODE = ""
 INDEX_NODE = ""
 
 # the prefix is found in the published urls that are backed by the path prefix below
-DATA_ROOTS = {'/esg/data' : 'esgf_data',
- '/p/user_pub/work' :  'user_pub_work', 
- '/p/css03/esgf_publish' : 'css03_data' }
+DATA_ROOTS = {}
+
+DEBUG = False
+
+# DATA_ROOTS = {'/esg/data' : 'esgf_data',
+#  '/p/user_pub/work' :  'user_pub_work',
+#  '/p/css03/esgf_publish' : 'css03_data' }
 
 
 # a certificate file for the index, assumes in the CWD
 CERT_FN = "cert.pem"
 
+TEST_PUB = True
+
+PROJECT = ""  # project setting.  This would be used to consider some project-specific features, eg. for CMIP6
+SET_REPLICA = False
+
+# These are optional
+GLOBUS_UUID = ""
+DATA_TRANSFER_NODE = ""
+
+# settings below here are unlikely to change in the common case
+
 # for these the following are inserted in order: 1. hostname 2. prefix 3. relative dataset path
 # Eg replace /thredds/fileServer with the prefix for NginX
 # Note these are netCDF specific and will need to change if other formats are considered
+
 # TODO - add Globus , GridFTP
+
+
 URL_Templates = ["https://{}/thredds/fileServer/{}/{}|application/netcdf|HTTPServer",
 "https://{}/thredds/dodsC/{}/{}|application/opendap-html|OPENDAP"]
 
@@ -64,7 +81,7 @@ PID_CREDS = [ {'url': 'aims4.llnl.gov', # 'handle-esgf-trusted.dkrz.de',
              'port': 7070,  # 5671,
              'vhost': 'esgf-pid',
              'user': 'esgf-publisher',
-             'password': "_EarTH!S9uAr3.PhoB0S!",
+             'password': "",
              'ssl_enabled': True,
              'priority': 1}]
 
@@ -78,10 +95,3 @@ CITATION_URLS = { 'CMIP6' : {'test' :
         'prod' : 'http://cera-www.dkrz.de/WDCC/meta/CMIP6/{}.v{}.json'}}
 
 PID_URL = 'http://hdl.handle.net/{}|PID|pid'  # PIDs include hdl:
-TEST_PUB = True
-
-PROJECT = ""  # project setting.  This would be used to consider some project-specific features, eg. for CMIP6
-SET_REPLICA = False
-
-GLOBUS_UUID = "415a6320-e49c-11e5-9798-22000b9da45e"
-DATA_TRANSFER_NODE = "aimsdtn4.llnl.gov"
