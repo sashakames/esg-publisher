@@ -59,6 +59,16 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
                     eprint("WARNING: {} does not agree!".format(f))
         d[f] = parts[i]
 
+#    SPLIT_FACET = {'E3SM': {'delim': '_', 'facet': 'grid_resolution', 0: 'atmos_', 2: 'ocean_'}}
+    if projkey in SPLIT_FACET:
+        splitinfo = SPLIT_FACET[projkey]
+        splitkey = splitinfo['facet']
+        orgval = d[splitkey]
+        valsplt = orgval.split(splitinfo['delim'])
+        for idxkey in splitinfo:
+            if type(idxkey) is int:
+                keyprefix = valsplt[idxkey]
+                d[keyprefix + splitkey] = valsplt[idxkey]
     # handle Global attributes if defined for the project
     if projkey in GA:
         for facetkey in GA[projkey]:

@@ -16,7 +16,7 @@ DRS = { 'CMIP6' : [ 'mip_era' , 'activity_drs','institution_id','source_id','exp
          'E3SM' : [ 'source', 'model_version', 'experiment', 'grid_resolution', 'realm', 'regridding', 'data_type', 'time_frequency', 'ensemble_member'],
     'input4MIPs' : ['activity_id', 'mip_era', 'target_mip', 'institution_id', 'source_id', 'realm', 'frequency', 'variable_id', 'grid_label' ] }
 
-SPLIT_FACET = { 'E3SM' : { 'delim' : '_' , 'facet' : 'grid_resolution', 0 : ''}  }
+SPLIT_FACET = { 'E3SM' : { 'delim' : '_' , 'facet' : 'grid_resolution', 0 : 'atmos_', 2 : 'ocean_'}  }
 
 # Global attributes expected to be read for a particular project.  For now a simple list.  
 GA = { 'CMIP6' : ['frequency',
