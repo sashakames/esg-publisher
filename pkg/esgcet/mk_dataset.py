@@ -51,6 +51,12 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
     projkey = parts[0]
     facets = DRS[projkey]
     d = {}
+
+    if not scandata:
+        eprint('WARNING:  empty dataset are the files in the mapfile still valid?')
+        return None
+
+
     for i, f in enumerate(facets):
         if f in scandata:
             ga_val = scandata[f]
@@ -67,7 +73,7 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
         valsplt = orgval.split(splitinfo['delim'])
         for idxkey in splitinfo:
             if type(idxkey) is int:
-                keyprefix = valsplt[idxkey]
+                keyprefix = splitinfo[idxkey]
                 d[keyprefix + splitkey] = valsplt[idxkey]
     # handle Global attributes if defined for the project
     if projkey in GA:
@@ -125,10 +131,10 @@ def format_template(template, root, rel):
             if globus != 'none':
                 return template.format(globus, root, rel)
             else:
-                print("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
+                eprint("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
                 return template.format(GLOBUS_UUID, root, rel)
         except:
-            print("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
+            eprint("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
             return template.format(GLOBUS_UUID, root, rel)
     elif "gsiftp" in template:
         try:
@@ -136,16 +142,16 @@ def format_template(template, root, rel):
             if dtn != 'none':
                 return template.format(dtn, root, rel)
             else:
-                print("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
+                eprint("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
                 return template.format(DATA_TRANSFER_NODE, root, rel)
         except:
-            print("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
+            eprint("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
             return template.format(DATA_TRANSFER_NODE, root, rel)
     else:
         try:
             data_node = config['user']['data_node']
         except:
-            print("Data node not defined. Define in esg.ini.", file=sys.stderr)
+            eprint("Data node not defined. Define in esg.ini.", file=sys.stderr)
             exit(1)
         return template.format(data_node, root, rel)
 
@@ -177,10 +183,10 @@ def get_file(dataset_rec, mapdata, fn_trid):
     try:
         data_roots = json.loads(config['user']['data_roots'])
         if data_roots == 'none':
-            print("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
+            eprint("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
             exit(1)
     except:
-        print("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
+        eprint("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
         exit(1)
     if not proj_root in data_roots:
         eprint('Error:  The file system root {} not found.  Please check your configuration.'.format(proj_root))
@@ -351,8 +357,12 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
     else:
         mapobj = mapdata
     scanobj = json.load(open(scanfilename))
-
+    
     rec = get_dataset(mapobj[0][0], scanobj['dataset'], data_node, index_node, replica)
+
+    if not rec:
+        return None
+
     update_metadata(rec, scanobj)
     rec["number_of_files"] = len(mapobj)  # place this better
 
@@ -362,9 +372,9 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
         xattrobj = {}
 
     if VERBOSE:
-        print("rec = ")
-        print(rec)
-        print()
+        eprint("rec = ")
+        eprint(rec)
+        eprint()
     for key in xattrobj:
         rec[key] = xattrobj[key]
 
@@ -376,6 +386,7 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
         print()
 
     ret, sz, access = iterate_files(rec, mapdict, scanobj)
+
     rec["size"] = sz
     rec["access"] = access
     ret.append(rec)
@@ -423,7 +434,7 @@ def run(args):
     else:
         ret = get_records(args[0], args[1], data_node, index_node, replica)
     if p or VERBOSE:
-        print(json.dumps(ret))
+        print(json.dumps(ret,indent=1))
     return ret
 
 def main():
