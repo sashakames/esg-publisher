@@ -64,7 +64,7 @@ DATA_ROOTS = {'/esg/data' : 'esgf_data',
 # a certificate file for the index, assumes in the CWD
 CERT_FN = "./cert.pem"
 
-VARIABLE_IN_FN = { 'E3SM' : {'data_type' : 'time_series' } }
+VARIABLE_IN_FN = { 'E3SM' : {'data_type' : 'time-series' } }
 MULTIPLE = "Multiple"
 
 # for these the following are inserted in order: 1. hostname 2. prefix 3. relative dataset path

@@ -1,4 +1,4 @@
-import sys, json
+import sys, json, os
 from esgcet.mapfile import *
 import configparser as cfg
 
@@ -328,7 +328,7 @@ def iterate_files(dataset_rec, mapdata, scandata):
     last_file = None
 
     if 'file' in scandata:
-        scanfile = get_scanfile_dict(scanobj['file'])
+        scanfile = get_scanfile_dict(scandata['file'])
         if not scanfile:
             eprint("Warning no file metadata found!")
     else:

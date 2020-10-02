@@ -13,7 +13,7 @@ for line in open(maplist):
     datafile=map_json_data[0][1]
 
     destpath=os.path.dirname(datafile)
-    outname=os.path.basename(datafile)
+    outname=os.path.basename(fullmap)
     idx = outname.rfind('.')
     scanfntemplate = "{}.scan.json"
     scanpath=scanfntemplate.format(outname[0:idx])
@@ -21,5 +21,5 @@ for line in open(maplist):
     autstr='autocurator --out_pretty --out_json {} --files "{}/*.nc"'
     os.system(autstr.format(scanpath, destpath))
     
-    mkd.run([map_json_data, scanpath, "greyworm1-rh7.llnl.gov", "esgf-fedtest.llnl.gov", False, 'no'])
+    mkd.run([map_json_data, scanpath, "greyworm1-rh7.llnl.gov", "esgf-fedtest.llnl.gov", False, sys.argv[3]])
 
