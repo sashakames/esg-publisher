@@ -1,4 +1,4 @@
-import sys, json
+import sys, json, os
 from esgcet.mapfile import *
 import configparser as cfg
 
@@ -51,6 +51,12 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
     projkey = parts[0]
     facets = DRS[projkey]
     d = {}
+
+    if not scandata:
+        eprint('WARNING:  empty dataset are the files in the mapfile still valid?')
+        return None
+
+
     for i, f in enumerate(facets):
         if f in scandata:
             ga_val = scandata[f]
@@ -59,6 +65,16 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
                     eprint("WARNING: {} does not agree!".format(f))
         d[f] = parts[i]
 
+#    SPLIT_FACET = {'E3SM': {'delim': '_', 'facet': 'grid_resolution', 0: 'atmos_', 2: 'ocean_'}}
+    if projkey in SPLIT_FACET:
+        splitinfo = SPLIT_FACET[projkey]
+        splitkey = splitinfo['facet']
+        orgval = d[splitkey]
+        valsplt = orgval.split(splitinfo['delim'])
+        for idxkey in splitinfo:
+            if type(idxkey) is int:
+                keyprefix = splitinfo[idxkey]
+                d[keyprefix + splitkey] = valsplt[idxkey]
     # handle Global attributes if defined for the project
     if projkey in GA:
         for facetkey in GA[projkey]:
@@ -115,10 +131,10 @@ def format_template(template, root, rel):
             if globus != 'none':
                 return template.format(globus, root, rel)
             else:
-                print("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
+                eprint("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
                 return template.format(GLOBUS_UUID, root, rel)
         except:
-            print("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
+            eprint("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
             return template.format(GLOBUS_UUID, root, rel)
     elif "gsiftp" in template:
         try:
@@ -126,16 +142,16 @@ def format_template(template, root, rel):
             if dtn != 'none':
                 return template.format(dtn, root, rel)
             else:
-                print("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
+                eprint("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
                 return template.format(DATA_TRANSFER_NODE, root, rel)
         except:
-            print("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
+            eprint("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
             return template.format(DATA_TRANSFER_NODE, root, rel)
     else:
         try:
             data_node = config['user']['data_node']
         except:
-            print("Data node not defined. Define in esg.ini.", file=sys.stderr)
+            eprint("Data node not defined. Define in esg.ini.", file=sys.stderr)
             exit(1)
         return template.format(data_node, root, rel)
 
@@ -167,10 +183,10 @@ def get_file(dataset_rec, mapdata, fn_trid):
     try:
         data_roots = json.loads(config['user']['data_roots'])
         if data_roots == 'none':
-            print("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
+            eprint("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
             exit(1)
     except:
-        print("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
+        eprint("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
         exit(1)
     if not proj_root in data_roots:
         eprint('Error:  The file system root {} not found.  Please check your configuration.'.format(proj_root))
@@ -197,23 +213,30 @@ def get_scanfile_dict(scandata):
     return ret
 
 
+def set_variable_metadata(record, scan_vars, vid):
+    try:
+        var_rec = scan_vars[vid]
+        if "long_name" in var_rec.keys():
+            record["variable_long_name"] = var_rec["long_name"]
+        elif "info" in var_rec:
+            record["variable_long_name"] = var_rec["info"]
+        if "standard_name" in var_rec:
+            record["cf_standard_name"] = var_rec["standard_name"]
+        record["variable_units"] = var_rec["units"]
+        record["variable"] = vid
+    except Exception as e:
+        eprint("Exception encountered {}".format(str(e)))
+
+
 def update_metadata(record, scanobj):
     if "variables" in scanobj:
         if "variable_id" in record:
 
             vid = record["variable_id"]
-            var_rec = scanobj["variables"][vid]
-            if "long_name" in var_rec.keys():
-                record["variable_long_name"] = var_rec["long_name"]
-            elif "info" in var_rec:
-                record["variable_long_name"] = var_rec["info"]
-            if "standard_name" in var_rec:
-                record["cf_standard_name"] = var_rec["standard_name"]
-            record["variable_units"] = var_rec["units"]
-            record["variable"] = vid
+            set_variable_metadata(record, scanobj['variables'], vid )
         else:
             eprint("TODO check project settings for variable extraction")
-            record["variable"] = "Multiple"
+            record["variable"] = MULTIPLE
     else:
         eprint("WARNING: no variables were extracted (is this CF compliant?)")
 
@@ -278,16 +301,47 @@ def update_metadata(record, scanobj):
     else:
         eprint("WARNING: No axes extracted from data files")
 
+def check_variable(dataset_rec):
+
+    if dataset_rec['project'] in VARIABLE_IN_FN and dataset_rec['variable'] == MULTIPLE:
+        field_check = VARIABLE_IN_FN[dataset_rec['project']]
+        key = [x for x in field_check.keys()][0]
+        value = field_check[key]
+
+        return (dataset_rec[key] == value)
+    return False
+
+# extracts the variable name from the file name
+def update_file(file_rec, scan_vars):
+
+    fparts = file_rec['title'].split('_')
+    flen =  len(fparts)
+
+    variable_name = "_".join(fparts[0:flen-2])
+
+    return set_variable_metadata(file_rec, scan_vars, variable_name)
+
 
 def iterate_files(dataset_rec, mapdata, scandata):
     ret = []
     sz = 0
     last_file = None
 
+    if 'file' in scandata:
+        scanfile = get_scanfile_dict(scandata['file'])
+        if not scanfile:
+            eprint("Warning no file metadata found!")
+    else:
+        eprint("Warning no file metadata found!")
+    if 'variables' in scandata:
+        scan_vars = scandata['variables']
+    #No else because we do a previous check in update matadata for dataset level variables.
     for maprec in mapdata:
         fullpath = maprec['file']
-        scanrec = scandata[fullpath]
+        scanrec = scanfile[fullpath]
         file_rec = get_file(dataset_rec, maprec, scanrec)
+        if check_variable(dataset_rec) and scan_vars:
+            update_file(file_rec, scan_vars)
         last_file = file_rec
         sz += file_rec["size"]
         ret.append(file_rec)
@@ -303,8 +357,12 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
     else:
         mapobj = mapdata
     scanobj = json.load(open(scanfilename))
-
+    
     rec = get_dataset(mapobj[0][0], scanobj['dataset'], data_node, index_node, replica)
+
+    if not rec:
+        return None
+
     update_metadata(rec, scanobj)
     rec["number_of_files"] = len(mapobj)  # place this better
 
@@ -314,9 +372,9 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
         xattrobj = {}
 
     if VERBOSE:
-        print("rec = ")
-        print(rec)
-        print()
+        eprint("rec = ")
+        eprint(rec)
+        eprint()
     for key in xattrobj:
         rec[key] = xattrobj[key]
 
@@ -326,12 +384,9 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
         print('mapdict = ')
         print(mapdict)
         print()
-    scandict = get_scanfile_dict(scanobj['file'])
-    if VERBOSE:
-        print('scandict = ')
-        print(scandict)
-        print()
-    ret, sz, access = iterate_files(rec, mapdict, scandict)
+
+    ret, sz, access = iterate_files(rec, mapdict, scanobj)
+
     rec["size"] = sz
     rec["access"] = access
     ret.append(rec)
@@ -378,7 +433,7 @@ def run(args):
     else:
         ret = get_records(args[0], args[1], data_node, index_node, replica)
     if p or VERBOSE:
-        print(json.dumps(ret))
+        print(json.dumps(ret,indent=1))
     return ret
 
 def main():
