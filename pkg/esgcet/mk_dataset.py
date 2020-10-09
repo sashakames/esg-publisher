@@ -49,6 +49,8 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
 
     parts = master_id.split('.')
     projkey = parts[0]
+
+        
     facets = DRS[projkey]
     d = {}
 
@@ -113,7 +115,8 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
     d['replica'] = replica
     d['latest'] = 'true'
     d['type'] = 'Dataset'
-    d['project'] = projkey
+    if projkey == "E3SM":
+        d['project'] = projkey.lower()
     d['version'] = version
 
     fmat_list = ['%({})s'.format(x) for x in DRS[projkey]]
@@ -177,8 +180,8 @@ def get_file(dataset_rec, mapdata, fn_trid):
     for kn in mapdata:
         if kn not in ("id", "file"):
             ret[kn] = mapdata[kn]
-
-    rel_path, proj_root = normalize_path(fullfn, dataset_rec["project"])
+    proj_key = dataset_rec["project"]
+    rel_path, proj_root = normalize_path(fullfn, proj_key.upper())
 
     try:
         data_roots = json.loads(config['user']['data_roots'])
