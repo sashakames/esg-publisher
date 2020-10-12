@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
     
 from setuptools import setup, find_packages
@@ -9,7 +10,7 @@ import configparser as cfg
 from shutil import copyfile
 
 
-VERSION = '5.0.0a2'
+VERSION = '5.0.0a5'
 print("esgcet version =", VERSION)
 HOME = str(Path.home())
 FULLPATH = HOME + '/.esg'

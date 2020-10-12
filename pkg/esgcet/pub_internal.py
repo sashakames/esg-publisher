@@ -187,7 +187,7 @@ def run(fullmap):
         print("Done.\nMaking dataset...")
     try:
         if third_arg_mkd:
-            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, json_file, 'no'])
+            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, json_file])
         else:
             out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, 'no'])
     except Exception as ex:
