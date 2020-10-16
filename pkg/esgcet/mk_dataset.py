@@ -117,6 +117,9 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
     d['type'] = 'Dataset'
     if projkey == "E3SM":
         d['project'] = projkey.lower()
+    else:
+        d['project'] = projkey
+
     d['version'] = version
 
     fmat_list = ['%({})s'.format(x) for x in DRS[projkey]]
@@ -381,7 +384,9 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
     for key in xattrobj:
         rec[key] = xattrobj[key]
 
+    assert('project' in rec)
     project = rec['project']
+
     mapdict = parse_map_arr(mapobj)
     if VERBOSE:
         print('mapdict = ')

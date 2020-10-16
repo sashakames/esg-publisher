@@ -70,6 +70,15 @@ def run(fullmap):
             silent = False
     except:
         silent = False
+
+    try:
+        s = config['user']['verbose']
+        if 'true' in s or 'yes' in s:
+            verbose = True
+        else:
+            verbose = False
+    except:
+        verbose = False 
     
     if pub.cert == "./cert.pem":
         try:
@@ -192,9 +201,9 @@ def run(fullmap):
             out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, 'no'])
     except Exception as ex:
         print("Error making dataset: " + str(ex), file=sys.stderr)
-        with open(scanfn, 'r') as sf:
-            for line in sf:
-                print(line)
+        if verbose:
+            with open(scanfn, 'r') as sf:
+                print(sf.read(), file=sys.stderr)
         exit_cleanup(scan_file)
         exit(1)
 
