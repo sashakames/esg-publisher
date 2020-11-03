@@ -2,13 +2,16 @@ from ESGConfigParser import SectionParser
 import configparser as cfg
 import os, sys
 from urllib.parse import urlparse
-import esgcet.settings
+# import esgcet.settings
 import shutil
 from datetime import date
 from pathlib import Path
 import argparse
 
 import json
+
+
+VERBOSE = true
 
 DEFAULT_ESGINI = '/esg/config/esgcet'
 CONFIG_FN_DEST = "~/.esg/esg.ini"
@@ -23,9 +26,14 @@ def project_migrate(project, path):
     SP = SectionParser("project:{}".format(project), path)
     SP.parse(path)
 
-    drs = SP.get_options('dataset_id')
-    cat_defaults = { x[0] : x[1] for x in sp.get_options_from_table('category_defaults') }
-    return { 'DRS' : drs , 'const_attr' : cat_defaults}
+    ret = {'drs' : sp.get_options('dataset_id')}
+    try:
+        ret[''] = { x[0] : x[1] for x in sp.get_options_from_table('category_defaults') }
+    except:
+        if VERBOSE:
+            print("No category defaults found for {}".format(project))
+    return ret
+
 
 def run(args):
 
@@ -153,7 +161,7 @@ def main():
     args = {}
     if len(sys.argv) > 2:
         args['fn'] = sys.argv[1]
-        args['project'] > sys.argv[2]
+        args['project'] = sys.argv[2]
     run(args)
 
 
