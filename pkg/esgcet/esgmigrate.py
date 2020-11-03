@@ -6,16 +6,34 @@ import esgcet.settings
 import shutil
 from datetime import date
 from pathlib import Path
+import argparse
+
 import json
 
 DEFAULT_ESGINI = '/esg/config/esgcet'
 CONFIG_FN_DEST = "~/.esg/esg.ini"
 
+def project_list(cfg_obj):
+    return [x[0] for x in cfg_obj.get_options_from_table('project_options')]
+
+
+
+def project_migrate(project, path):
+
+    SP = SectionParser("project:{}".format(project), path)
+    SP.parse(path)
+
+    drs = SP.get_options('dataset_id')
+    cat_defaults = { x[0] : x[1] for x in sp.get_options_from_table('category_defaults') }
+    return { 'DRS' : drs , 'const_attr' : cat_defaults}
 
 def run(args):
 
     ini_path = DEFAULT_ESGINI
 
+    project = ""
+    if 'project' in args:
+        project = args['project']
     if 'fn' in args:
         ini_path = args['fn']
     elif args.get('automigrate', False):
@@ -35,6 +53,14 @@ def run(args):
         print("Exception encountered {}".format(str(e)))
         return
 
+    project_config = {}
+    if project.lower() == "all":
+        plist = project_list(SP)
+        project_config = { project : project_migrate(proj, ini_path) for proj in plist }
+
+    elif len(project) > 0:
+        project_config = { project : project_migrate(project, ini_path) }
+
     thredds_url = sp.get("thredds_url")
     res = urlparse(thredds_url)
     data_node = res.netloc
@@ -44,6 +70,7 @@ def run(args):
     index_node = res.netloc
 
     log_level = sp.get('log_level')
+
 
     try:
         pid_creds_in = sp.get_options_from_table('pid_credentials')
@@ -109,6 +136,9 @@ def run(args):
     config.read(config_file)
     new_config = {"data_node": data_node, "index_node": index_node, "data_roots": json.dumps(dr_dict), "cert": CERT_FN,
                   "globus_uuid": GLOBUS_UUID, "data_transfer_node": DATA_TRANSFER_NODE, "pid_creds": json.dumps(pid_creds)}
+    if len(project_config) > 0:
+        new_config['project_config'] = json.dumps(project_config)
+
     for key, value in new_config.items():
         try:
             test = config['user'][key]
@@ -121,8 +151,9 @@ def run(args):
 def main():
 
     args = {}
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
         args['fn'] = sys.argv[1]
+        args['project'] > sys.argv[2]
     run(args)
 
 
