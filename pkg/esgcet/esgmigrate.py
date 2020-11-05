@@ -11,7 +11,7 @@ import argparse
 import json
 
 
-VERBOSE = true
+VERBOSE = True
 
 DEFAULT_ESGINI = '/esg/config/esgcet'
 CONFIG_FN_DEST = "~/.esg/esg.ini"
@@ -23,12 +23,13 @@ def project_list(cfg_obj):
 
 def project_migrate(project, path):
 
-    SP = SectionParser("project:{}".format(project), path)
+    print(project)
+    SP = SectionParser("project:{}".format(project), directory=path)
     SP.parse(path)
 
-    ret = {'drs' : sp.get_options('dataset_id')}
+    ret = {'drs' : SP.get_facets('dataset_id')}
     try:
-        ret[''] = { x[0] : x[1] for x in sp.get_options_from_table('category_defaults') }
+        ret[''] = { x[0] : x[1] for x in SP.get_options_from_table('category_defaults') }
     except:
         if VERBOSE:
             print("No category defaults found for {}".format(project))
@@ -55,28 +56,29 @@ def run(args):
         return
 
     try:
-        sp = SectionParser('config:cmip6')
+        sp = SectionParser('config:cmip6', directory=ini_path)
         sp.parse( ini_path)
     except Exception as e:
         print("Exception encountered {}".format(str(e)))
         return
 
-    project_config = {}
-    if project.lower() == "all":
-        plist = project_list(SP)
-        project_config = { project : project_migrate(proj, ini_path) for proj in plist }
-
-    elif len(project) > 0:
-        project_config = { project : project_migrate(project, ini_path) }
 
     thredds_url = sp.get("thredds_url")
     res = urlparse(thredds_url)
     data_node = res.netloc
 
-    index_url = sp.get('rest_service_url')
-    res = urlparse(index_url)
-    index_node = res.netloc
-
+    spdef = list(sp['DEFAULT'])
+    index_node = ""
+    if 'rest_service_url' in spdef:
+        index_url = sp.get('rest_service_url')
+    elif 'hessian_service_url' in spdef:
+        index_url = sp.get('hessian_service_url')
+    if index_url != "":
+        res = urlparse(index_url)
+        index_node = res.netloc
+    else:
+        index_node = ""
+        print("WARNING: No index node setting found in previous config, migration of settings will be incomplete!")
     log_level = sp.get('log_level')
 
 
@@ -123,6 +125,15 @@ def run(args):
             GLOBUS_UUID = parts[1][0:36] # length of UUID
 
     cert_base = sp.get('hessian_service_certfile')
+
+    project_config = {}
+    if project.lower() == "all":
+        plist = project_list(sp)
+        project_config = {proj: project_migrate(proj, ini_path) for proj in plist}
+
+    elif len(project) > 0:
+        print(ini_path)
+        project_config = {project: project_migrate(project, ini_path)}
 
     CERT_FN = cert_base.replace('%(home)s', '~')
 
