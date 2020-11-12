@@ -14,7 +14,8 @@ AUTOC_PATH = None
 # For each project these become the . delimited components of the dataset_id
 DRS = { 'CMIP6' : [ 'mip_era' , 'activity_drs','institution_id','source_id','experiment_id','member_id','table_id','variable_id','grid_label'],
          'E3SM' : [ 'source', 'model_version', 'experiment', 'grid_resolution', 'realm', 'regridding', 'data_type', 'time_frequency', 'ensemble_member'],
-    'input4MIPs' : ['activity_id', 'mip_era', 'target_mip', 'institution_id', 'source_id', 'realm', 'frequency', 'variable_id', 'grid_label' ] }
+    'input4MIPs' : ['activity_id', 'mip_era', 'target_mip', 'institution_id', 'source_id', 'realm', 'frequency', 'variable_id', 'grid_label' ],
+'obs4MIPs' : ["activity_id", "institution_id", "source_id", "frequency", "variable_id", "grid_label"] }
 
 SPLIT_FACET = { 'E3SM' : { 'delim' : '_' , 'facet' : 'grid_resolution', 0 : ''}  }
 
@@ -46,10 +47,12 @@ GA = { 'CMIP6' : ['frequency',
 'dataset_status',
 'realm_drs',
 'Conventions',
-'creation_date']}
+'creation_date'],
+"obs4MIPs" : ["realm", "product", "nominal_resolution", "source_type", "creation_date", "institution", "source",  "source_type", "contact", "region", "data_specs_version",  "further_info_url", "source_version_number"]
+}
 
 GA_DELIMITED = { 'CMIP6' : { 'source_type' : ' ', 'activity_id' : ' ', 'realm' : ' '  },
-                 'input4MIPs' : {'target_mip' : ','}}
+                 'input4MIPs' : {'target_mip' : ','}, 'obs4MIPs' : {}}
 
 CONST_ATTR =  { 'CMIP6' : { 'model_cohort' : 'Registered' }}
 

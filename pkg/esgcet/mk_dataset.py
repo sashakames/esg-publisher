@@ -119,7 +119,13 @@ def gen_urls(proj_root, rel_path):
     return  [format_template(template, proj_root, rel_path) for template in URL_Templates]
 
 
-def get_file(dataset_rec, mapdata, fn_trid):
+def get_file(dataset_rec, mapdata, **kwargs):
+    
+    if ('fn_trid' in kwargs):
+        fn_trid = kwargs['fn_trid']
+    else:
+        fn_trid =  {}
+        
     ret = dataset_rec.copy()
     dataset_id = dataset_rec["id"]
     ret['type'] = "File"
@@ -224,6 +230,10 @@ def update_metadata(record, scanobj):
                     eprint("WARNING: Time values not located...")
                     proc_time = False
                 if proc_time:
+                    while not tu_date[-1].isdigit():
+                        tu_date = tu_date[0:-1]
+
+
                     try:
                         days_since_dt = datetime.strptime(tu_date, "%Y-%m-%d")
                     except:
@@ -254,8 +264,11 @@ def iterate_files(dataset_rec, mapdata, scandata):
 
     for maprec in mapdata:
         fullpath = maprec['file']
-        scanrec = scandata[fullpath]
-        file_rec = get_file(dataset_rec, maprec, scanrec)
+        try:
+            scanrec = scandata[fullpath]
+            file_rec = get_file(dataset_rec, maprec, fn_trid=scanrec)
+        except:
+            file_rec = get_file(dataset_rec, maprec)
         last_file = file_rec
         sz += file_rec["size"]
         ret.append(file_rec)
