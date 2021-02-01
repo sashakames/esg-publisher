@@ -39,18 +39,17 @@ def eprint(*a):
 def unpack_values(invals):
 
     for x in invals:
-        if x['values']:
+        if x['values'] and (not x['values'][0] == x['values'][-1]):
             yield x['values']
 
 
-def get_dataset(mapdata, scandata, data_node, index_node, replica):
+def get_dataset(mapdata,  data_node, index_node, replica):
 
     master_id, version = mapdata.split('#')
 
     parts = master_id.split('.')
     projkey = parts[0]
 
-        
     facets = DRS[projkey]
     d = {}
 
@@ -58,14 +57,6 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
         eprint('WARNING:  empty dataset are the files in the mapfile still valid?')
         return None
 
-
-    for i, f in enumerate(facets):
-        if f in scandata:
-            ga_val = scandata[f]
-            if not parts[i] == ga_val:
-                if not SILENT:
-                    eprint("WARNING: {} does not agree!".format(f))
-        d[f] = parts[i]
 
 #    SPLIT_FACET = {'E3SM': {'delim': '_', 'facet': 'grid_resolution', 0: 'atmos_', 2: 'ocean_'}}
     if projkey in SPLIT_FACET:
@@ -78,28 +69,7 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
                 keyprefix = splitinfo[idxkey]
                 d[keyprefix + splitkey] = valsplt[idxkey]
     # handle Global attributes if defined for the project
-    if projkey in GA:
-        for facetkey in GA[projkey]:
-            # did we find a GA in the data by the the key name
-            if facetkey in scandata:
-                facetval = scandata[facetkey]
-                # is this a delimited attribute ?
-                if facetkey in GA_DELIMITED[projkey]:
-                    delimiter = GA_DELIMITED[projkey][facetkey]
-                    d[facetkey] = facetval.split(delimiter)
-                else:
-                    d[facetkey] = facetval
-        # would we ever combine mapped and delimited facets?
-    if projkey in GA_MAPPED:
-        for gakey in GA_MAPPED[projkey]:
-            if gakey in scandata:
-                facetkey = GA_MAPPED[projkey][gakey]
-                facetval = scandata[gakey]
-                d[facetkey] = facetval
-            else:
-                if not SILENT:
-                    eprint("WARNING: GA to be mapped {} is missing!".format(facetkey))
-    if projkey in CONST_ATTR: 
+    if projkey in CONST_ATTR:
         for facetkey in CONST_ATTR[projkey]:
             d[facetkey] = CONST_ATTR[projkey][facetkey]
 
@@ -348,10 +318,7 @@ def iterate_files(dataset_rec, mapdata, scandata):
     #No else because we do a previous check in update matadata for dataset level variables.
     for maprec in mapdata:
         fullpath = maprec['file']
-        scanrec = scanfile[fullpath]
-        file_rec = get_file(dataset_rec, maprec, scanrec)
-        if check_variable(dataset_rec) and scan_vars:
-            update_file(file_rec, scan_vars)
+        file_rec = get_file(dataset_rec, maprec, {})
         last_file = file_rec
         sz += file_rec["size"]
         ret.append(file_rec)
@@ -366,14 +333,12 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
         mapobj = json.load(open(mapdata))
     else:
         mapobj = mapdata
-    scanobj = json.load(open(scanfilename))
-    
-    rec = get_dataset(mapobj[0][0], scanobj['dataset'], data_node, index_node, replica)
+
+    rec = get_dataset(mapobj[0][0], data_node, index_node, replica)
 
     if not rec:
         return None
 
-    update_metadata(rec, scanobj)
     rec["number_of_files"] = len(mapobj)  # place this better
 
     if xattrfn:
@@ -397,7 +362,7 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
         print(mapdict)
         print()
 
-    ret, sz, access = iterate_files(rec, mapdict, scanobj)
+    ret, sz, access = iterate_files(rec, mapdict, {})
 
     rec["size"] = sz
     rec["access"] = access
@@ -441,9 +406,9 @@ def run(args):
             exit(1)
 
     if len(args) > 5 and args[-1] != 'no':
-        ret = get_records(args[0], args[1], data_node, index_node, replica, xattrfn=args[5])
+        ret = get_records(args[0], "", data_node, index_node, replica, xattrfn=args[5])
     else:
-        ret = get_records(args[0], args[1], data_node, index_node, replica)
+        ret = get_records(args[0], "", data_node, index_node, replica)
     if p or VERBOSE:
         print(json.dumps(ret,indent=1))
     return ret

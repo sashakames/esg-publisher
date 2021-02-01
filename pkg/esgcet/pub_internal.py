@@ -33,10 +33,6 @@ def check_files(files):
         myfile.close()
 
 
-def exit_cleanup(scan_file):
-    scan_file.close()
-
-
 def run(fullmap):
 
     split_map = fullmap.split("/")
@@ -89,16 +85,6 @@ def run(fullmap):
         cert = pub.cert
 
     conda_auto = False
-    if pub.autocurator_path is None:
-        try:
-            autocurator = config['user']['autoc_path']
-            if autocurator == "autocurator":
-                conda_auto = True
-        except:
-            autocurator = "autocurator"
-            conda_auto = True
-    else:
-        autocurator = pub.autocurator_path
 
     if pub.index_node is None:
         try:
@@ -140,14 +126,6 @@ def run(fullmap):
             exit(1)
 
 
-    scan_file = tempfile.NamedTemporaryFile()  # create a temporary file which is deleted afterward for autocurator
-    scanfn = scan_file.name  # name to refer to tmp file
-
-    if not conda_auto:
-        autoc_command = autocurator + "/bin/autocurator"  # concatenate autocurator command
-    else:
-        autoc_command = autocurator
-
     os.system("cert_path=" + cert)
 
     if not silent:
@@ -186,25 +164,15 @@ def run(fullmap):
     outname = os.path.basename(datafile)
     idx = outname.rfind('.')
 
-    autstr = autoc_command + ' --out_pretty --out_json {} --files "{}/*.nc"'
-    stat = os.system(autstr.format(scanfn, destpath))
-    if os.WEXITSTATUS(stat) != 0:
-        print("Error running autocurator, exited with exit code: " + str(os.WEXITSTATUS(stat)), file=sys.stderr)
-        exit(os.WEXITSTATUS(stat))
-
     if not silent:
         print("Done.\nMaking dataset...")
     try:
         if third_arg_mkd:
-            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, json_file])
+            out_json_data = mkd.run([map_json_data, "", data_node, index_node, replica, json_file])
         else:
-            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, 'no'])
+            out_json_data = mkd.run([map_json_data, "", data_node, index_node, replica, 'no'])
     except Exception as ex:
         print("Error making dataset: " + str(ex), file=sys.stderr)
-        if verbose:
-            with open(scanfn, 'r') as sf:
-                print(sf.read(), file=sys.stderr)
-        exit_cleanup(scan_file)
         exit(1)
 
     if cmip6:
@@ -242,12 +210,10 @@ def run(fullmap):
         ip.run([out_json_data, index_node, cert])
     except Exception as ex:
         print("Error running pub test: " + str(ex), file=sys.stderr)
-        exit_cleanup(scan_file)
         exit(1)
 
     if not silent:
         print("Done. Cleaning up.")
-    exit_cleanup(scan_file)
 
 
 def main():
