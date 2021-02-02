@@ -14,6 +14,9 @@ from esgcet.settings import *
 import configparser as cfg
 from pathlib import Path
 
+import traceback
+
+
 def prepare_internal(json_map, cmor_tables):
     print("iterating through filenames for PrePARE (internal version)...")
     validator = PrePARE.PrePARE
@@ -155,9 +158,6 @@ def run(fullmap):
             exit_cleanup(scan_file)
             exit(1)
 
-    # Run autocurator and all python scripts
-    if not silent:
-        print("Running autocurator...")
     datafile = map_json_data[0][1]
 
     destpath = os.path.dirname(datafile)
@@ -172,6 +172,7 @@ def run(fullmap):
         else:
             out_json_data = mkd.run([map_json_data, "", data_node, index_node, replica, 'no'])
     except Exception as ex:
+        traceback.print_exc()
         print("Error making dataset: " + str(ex), file=sys.stderr)
         exit(1)
 
