@@ -137,7 +137,6 @@ def run(fullmap):
         map_json_data = mp.run([fullmap, 'no'])
     except Exception as ex:
         print("Error with converting mapfile: " + str(ex), file=sys.stderr)
-        exit_cleanup(scan_file)
         exit(1)
     if not silent:
         print("Done.")
@@ -155,7 +154,6 @@ def run(fullmap):
             prepare_internal(map_json_data, cmor_tables)
         except Exception as ex:
             print("Error with PrePARE: " + str(ex), file=sys.stderr)
-            exit_cleanup(scan_file)
             exit(1)
 
     datafile = map_json_data[0][1]
@@ -183,7 +181,6 @@ def run(fullmap):
             new_json_data = pid.run([out_json_data, data_node, 'no'])
         except Exception as ex:
             print("Error running pid cite: " + str(ex), file=sys.stderr)
-            exit_cleanup(scan_file)
             exit(1)
 
         if not silent:
@@ -192,7 +189,6 @@ def run(fullmap):
             act.run(new_json_data)
         except Exception as ex:
             print("Error running activity check: " + str(ex), file=sys.stderr)
-            exit_cleanup(scan_file)
             exit(1)
         out_json_data = new_json_data
 
@@ -202,7 +198,6 @@ def run(fullmap):
         up.run([out_json_data, index_node, cert])
     except Exception as ex:
         print("Error updating: " + str(ex), file=sys.stderr)
-        exit_cleanup(scan_file)
         exit(1)
 
     if not silent:

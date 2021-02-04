@@ -11,7 +11,7 @@ from shutil import copyfile
 
 
 
-VERSION = '5.0.0a5'
+VERSION = '5.0.0a10'
 
 print("esgcet version =", VERSION)
 HOME = str(Path.home())
