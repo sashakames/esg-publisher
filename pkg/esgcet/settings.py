@@ -72,7 +72,7 @@ MULTIPLE = "Multiple"
 # Note these are netCDF specific and will need to change if other formats are considered
 # TODO - add Globus , GridFTP
 URL_Templates = ["https://{}/thredds/fileServer/{}/{}|application/netcdf|HTTPServer",
-"https://{}/thredds/dodsC/{}/{}.html|application/opendap-html|OPENDAP",
+#"https://{}/thredds/dodsC/{}/{}.html|application/opendap-html|OPENDAP",   # uncomment this line whe merged and will need to switch off for non-netCDF data
                  "gsiftp://{}:2811/{}/{}|application/gridftp|GridFTP",
                  "globus:{}/{}/{}|Globus|Globus"]
 

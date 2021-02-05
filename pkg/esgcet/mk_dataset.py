@@ -53,10 +53,8 @@ def get_dataset(mapdata,  data_node, index_node, replica):
     facets = DRS[projkey]
     d = {}
 
-    if not scandata:
-        eprint('WARNING:  empty dataset are the files in the mapfile still valid?')
-        return None
-
+    for i, f in enumerate(facets):
+        d[f] = parts[i]
 
 #    SPLIT_FACET = {'E3SM': {'delim': '_', 'facet': 'grid_resolution', 0: 'atmos_', 2: 'ocean_'}}
     if projkey in SPLIT_FACET:
@@ -107,10 +105,10 @@ def format_template(template, root, rel):
             if globus != 'none':
                 return template.format(globus, root, rel)
             else:
-                eprint("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
+                print("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
                 return template.format(GLOBUS_UUID, root, rel)
         except:
-            eprint("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
+            print("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
             return template.format(GLOBUS_UUID, root, rel)
     elif "gsiftp" in template:
         try:
@@ -118,16 +116,16 @@ def format_template(template, root, rel):
             if dtn != 'none':
                 return template.format(dtn, root, rel)
             else:
-                eprint("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
+                print("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
                 return template.format(DATA_TRANSFER_NODE, root, rel)
         except:
-            eprint("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
+            print("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
             return template.format(DATA_TRANSFER_NODE, root, rel)
     else:
         try:
             data_node = config['user']['data_node']
         except:
-            eprint("Data node not defined. Define in esg.ini.", file=sys.stderr)
+            print("Data node not defined. Define in esg.ini.", file=sys.stderr)
             exit(1)
         return template.format(data_node, root, rel)
 
@@ -306,6 +304,8 @@ def iterate_files(dataset_rec, mapdata, scandata):
     ret = []
     sz = 0
     last_file = None
+
+    assert(len(scandata) ==0)
 
     if 'file' in scandata:
         scanfile = get_scanfile_dict(scandata['file'])
