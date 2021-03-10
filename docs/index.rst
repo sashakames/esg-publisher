@@ -7,12 +7,14 @@ The esgcet package for ESGF Publication
    install
    autocurator
    cmor
+   esgmigrate
    esgpublish
    esgmapconv
    esgmkpubrec
    esgpidcitepub
    esgupdate
    esgindexpub
+   contributing
 
 Esgcet is a package of publisher commands for publishing to the `ESGF
 <https://esgf-node.llnl.gov/projects/esgf-llnl/>`_ search database.

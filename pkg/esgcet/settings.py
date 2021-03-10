@@ -1,6 +1,6 @@
 DEBUG = False
 
-INDEX_NODE = None
+INDEX_NODE = "esgf-node.llnl.gov"
 DATA_NODE = None
 
 CMOR_PATH = None
@@ -62,7 +62,7 @@ DATA_ROOTS = {'/esg/data' : 'esgf_data',
 
 
 # a certificate file for the index, assumes in the CWD
-CERT_FN = "./cert.pem"
+CERT_FN = "/p/user_pub/publish-queue/certs/certificate-file"
 
 VARIABLE_IN_FN = { 'E3SM' : {'data_type' : 'time-series' } }
 MULTIPLE = "Multiple"

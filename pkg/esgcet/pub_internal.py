@@ -5,6 +5,7 @@ import esgcet.index_pub as ip
 import esgcet.pid_cite_pub as pid
 import esgcet.activity_check as act
 import esgcet.args as args
+import esgcet.esgmigrate as migrate
 import os
 import json
 import sys
@@ -13,6 +14,12 @@ from cmip6_cv import PrePARE
 from esgcet.settings import *
 import configparser as cfg
 from pathlib import Path
+
+
+import traceback
+
+DEFAULT_ESGINI = '/esg/config/esgcet'
+
 
 def prepare_internal(json_map, cmor_tables):
     print("iterating through filenames for PrePARE (internal version)...")
@@ -44,8 +51,6 @@ def run(fullmap):
     fname_split = fname.split(".")
     proj = fname_split[0]
     cmip6 = False
-    if proj == "CMIP6":
-        cmip6 = True
 
     files = []
     files.append(fullmap)
@@ -57,28 +62,58 @@ def run(fullmap):
     if pub.json is not None:
         json_file = pub.json
         third_arg_mkd = True
+
+    if pub.migrate:
+        migrate.run({})
+
     ini_file = pub.cfg
     config = cfg.ConfigParser()
     config_file = ini_file
-    config.read(config_file)
-
     try:
-        s = config['user']['silent']
-        if 'true' in s or 'yes' in s:
-            silent = True
+        config.read(config_file)
+    except Exception as ex:
+        if not os.path.exists(ini_file):
+            print("No config file found. Attempting to migrate old settings.")
+            migrate.run(DEFAULT_ESGINI, False, False)
         else:
+            print("Error opening config file: " + str(ex))
+            exit(1)
+
+    if pub.proj != "":
+        proj = pub.proj
+    else:
+        try:
+            tmp = config['user']['project']
+            if tmp != "none":
+                proj = tmp
+        except:
+            pass
+    if proj == "CMIP6":
+        cmip6 = True
+
+    if not pub.silent:
+        try:
+            s = config['user']['silent']
+            if 'true' in s or 'yes' in s:
+                silent = True
+            else:
+                silent = False
+        except:
             silent = False
-    except:
-        silent = False
+    else:
+        silent = True
 
-    try:
-        s = config['user']['verbose']
-        if 'true' in s or 'yes' in s:
-            verbose = True
-        else:
+    if not pub.verbose:
+        try:
+            v = config['user']['verbose']
+            if 'true' in v or 'yes' in v:
+                verbose = True
+            else:
+                verbose = False
+        except:
             verbose = False
-    except:
-        verbose = False 
+    else:
+        verbose = True
     
     if pub.cert == "./cert.pem":
         try:
@@ -117,7 +152,27 @@ def run(fullmap):
             exit(1)
     else:
         data_node = pub.data_node
+    try:
+        data_roots = json.loads(config['user']['data_roots'])
+        if data_roots == 'none':
+            print("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
+            exit(1)
+    except:
+        print("Data roots undefined. Define in esg.ini to create file metadata.", file=sys.stderr)
+        exit(1)
 
+    try:
+        globus = json.loads(config['user']['globus_uuid'])
+    except:
+        # globus undefined
+        globus = "none"
+
+    try:
+        dtn = config['user']['data_transfer_node']
+    except:
+        # dtn undefined
+        dtn = "none"
+    
     if pub.set_replica and pub.no_replica:
         print("Error: replica publication simultaneously set and disabled.", file=sys.stderr)
         exit(1)
@@ -139,7 +194,6 @@ def run(fullmap):
             print("Set_replica not defined. Use --set-replica or --no-replica or define in esg.ini.", file=sys.stderr)
             exit(1)
 
-
     scan_file = tempfile.NamedTemporaryFile()  # create a temporary file which is deleted afterward for autocurator
     scanfn = scan_file.name  # name to refer to tmp file
 
@@ -153,8 +207,11 @@ def run(fullmap):
     if not silent:
         print("Converting mapfile...")
     try:
-        map_json_data = mp.run([fullmap, 'no'])
+        map_json_data = mp.run([fullmap, proj])
     except Exception as ex:
+        if verbose:
+            traceback.print_exc()
+
         print("Error with converting mapfile: " + str(ex), file=sys.stderr)
         exit_cleanup(scan_file)
         exit(1)
@@ -173,6 +230,8 @@ def run(fullmap):
         try:
             prepare_internal(map_json_data, cmor_tables)
         except Exception as ex:
+            if verbose:
+                traceback.print_exc()
             print("Error with PrePARE: " + str(ex), file=sys.stderr)
             exit_cleanup(scan_file)
             exit(1)
@@ -196,14 +255,13 @@ def run(fullmap):
         print("Done.\nMaking dataset...")
     try:
         if third_arg_mkd:
-            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, json_file])
+            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, data_roots, globus, dtn, silent, verbose, json_file])
         else:
-            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, 'no'])
+            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, data_roots, globus, dtn, silent, verbose])
     except Exception as ex:
-        print("Error making dataset: " + str(ex), file=sys.stderr)
         if verbose:
-            with open(scanfn, 'r') as sf:
-                print(sf.read(), file=sys.stderr)
+            traceback.print_exc()
+        print("Error making dataset: " + str(ex), file=sys.stderr)
         exit_cleanup(scan_file)
         exit(1)
 
@@ -211,11 +269,20 @@ def run(fullmap):
         if not silent:
             print("Done.\nRunning pid cite...")
         try:
-            new_json_data = pid.run([out_json_data, data_node, 'no'])
+            pid_creds = json.loads(config['user']['pid_creds'])
+        except:
+            print("PID credentials not defined. Define in config file esg.ini.", file=sys.stderr)
+            exit(1)
+        try:
+            new_json_data = pid.run([out_json_data, data_node, pid_creds, silent, verbose])
         except Exception as ex:
+            if verbose:
+                traceback.print_exc()
             print("Error running pid cite: " + str(ex), file=sys.stderr)
             exit_cleanup(scan_file)
             exit(1)
+    else:
+        new_json_data = out_json_data
 
         if not silent:
             print("Done.\nRunning activity check...")
@@ -225,13 +292,14 @@ def run(fullmap):
             print("Error running activity check: " + str(ex), file=sys.stderr)
             exit_cleanup(scan_file)
             exit(1)
-        out_json_data = new_json_data
 
     if not silent:
         print("Done.\nUpdating...")
     try:
-        up.run([out_json_data, index_node, cert])
+        up.run([new_json_data, index_node, cert, silent, verbose])
     except Exception as ex:
+        if verbose:
+            traceback.print_exc()
         print("Error updating: " + str(ex), file=sys.stderr)
         exit_cleanup(scan_file)
         exit(1)
@@ -239,9 +307,11 @@ def run(fullmap):
     if not silent:
         print("Done.\nRunning index pub...")
     try:
-        ip.run([out_json_data, index_node, cert])
+        ip.run([new_json_data, index_node, cert, silent, verbose])
     except Exception as ex:
-        print("Error running pub test: " + str(ex), file=sys.stderr)
+        if verbose:
+            traceback.print_exc()
+        print("Error running index pub: " + str(ex), file=sys.stderr)
         exit_cleanup(scan_file)
         exit(1)
 
@@ -262,7 +332,7 @@ def main():
             length = len(line)
             run(line[0:length - 2])
         myfile.close()
-        # iterate through file in directory calling main
+        # iterate through file in directory calling main func
     else:
         for m in maps:
             run(m)

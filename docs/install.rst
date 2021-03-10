@@ -2,19 +2,27 @@ Installation
 ============
 
 You can install esgcet one of two ways: conda, or git.
-To install esgcet by cloning our github repository, run::
+
+
+To install esgcet using conda, ensure the conda command is available in your shell and run::
+
+    conda create -n esgf-pub -c esgf-forge -c conda-forge esgcet
+    conda activate esgf-pub
+
+..  note:: the command above creates a new environment for the publisher.  This is recommended rather than attempting to reuse an existing environment if you wish to upgrade a previous version of the publisher.  
+
+To install esgcet by cloning our github repository (useful if you want to modiy the software): first, you should ensure you have a suitable python in your environment (see below for information on conda, etc.), and then run::
 
     git clone http://github.com/lisi-w/esg-publisher.git -b gen-five-pkg
     cd esg-publisher
     cd pkg
     python3 setup.py install
 
-To install esgcet using conda, run::
 
-    conda create -n esgf-pub -c esgf-forge -c conda-forge esgcet pip libnetcdf cmor autocurator esgconfigparser
 
 Now you will be able to call all commands in this package from any directory. A default config file, ``esg.ini`` will populate in ``$HOME/.esg`` where ``$HOME`` is your home directory.
-Don't forget that you need to install autocurator and download CMOR tables before the publisher will successfully run. See those pages for more info.
+
+NOTE: if you are intending to publish CMIP6 data, the publisher will run the PrePARE module to check all file metadata.  To enable this procedure, it is necessry to download CMOR tables before the publisher will successfully run. See those pages for more info.
 
 Conda & Required Packages
 -------------------------
@@ -89,6 +97,9 @@ The default config file will look like this::
     verbose = falsee
 
 Fill out the necessary variables, and either leave or override the optional configurations. Note that the section the publisher reads is the ``user`` section, not the default nor example.
+
+If you have an old config file from the previous iteration of the publisher, you can use ``esgmigrate`` to migrate over those settings to a new config file which can be read by the current publisher.
+See that page for more info.
 
 Run Time Args
 -------------
