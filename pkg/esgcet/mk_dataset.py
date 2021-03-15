@@ -1,4 +1,4 @@
-import sys, json
+import sys, json, os
 from esgcet.mapfile import *
 import configparser as cfg
 
@@ -39,8 +39,16 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
 
     parts = master_id.split('.')
     projkey = parts[0]
+
+        
     facets = DRS[projkey]
     d = {}
+
+    if not scandata:
+        eprint('WARNING:  empty dataset are the files in the mapfile still valid?')
+        return None
+
+
     for i, f in enumerate(facets):
         if f in scandata:
             ga_val = scandata[f]
@@ -49,6 +57,16 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
                     eprint("WARNING: {} does not agree!".format(f))
         d[f] = parts[i]
 
+#    SPLIT_FACET = {'E3SM': {'delim': '_', 'facet': 'grid_resolution', 0: 'atmos_', 2: 'ocean_'}}
+    if projkey in SPLIT_FACET:
+        splitinfo = SPLIT_FACET[projkey]
+        splitkey = splitinfo['facet']
+        orgval = d[splitkey]
+        valsplt = orgval.split(splitinfo['delim'])
+        for idxkey in splitinfo:
+            if type(idxkey) is int:
+                keyprefix = splitinfo[idxkey]
+                d[keyprefix + splitkey] = valsplt[idxkey]
     # handle Global attributes if defined for the project
     if projkey in GA:
         for facetkey in GA[projkey]:
@@ -87,7 +105,11 @@ def get_dataset(mapdata, scandata, data_node, index_node, replica):
     d['replica'] = replica
     d['latest'] = 'true'
     d['type'] = 'Dataset'
-    d['project'] = projkey
+    if projkey == "E3SM":
+        d['project'] = projkey.lower()
+    else:
+        d['project'] = projkey
+
     d['version'] = version
 
     fmat_list = ['%({})s'.format(x) for x in DRS[projkey]]
@@ -147,9 +169,8 @@ def get_file(dataset_rec, mapdata, fn_trid):
     for kn in mapdata:
         if kn not in ("id", "file"):
             ret[kn] = mapdata[kn]
-
-    rel_path, proj_root = normalize_path(fullfn, dataset_rec["project"])
-
+    proj_key = dataset_rec["project"]
+    rel_path, proj_root = normalize_path(fullfn, proj_key.upper())
 
     if not proj_root in data_roots:
         eprint('Error:  The file system root {} not found.  Please check your configuration.'.format(proj_root))
@@ -176,23 +197,30 @@ def get_scanfile_dict(scandata):
     return ret
 
 
+def set_variable_metadata(record, scan_vars, vid):
+    try:
+        var_rec = scan_vars[vid]
+        if "long_name" in var_rec.keys():
+            record["variable_long_name"] = var_rec["long_name"]
+        elif "info" in var_rec:
+            record["variable_long_name"] = var_rec["info"]
+        if "standard_name" in var_rec:
+            record["cf_standard_name"] = var_rec["standard_name"]
+        record["variable_units"] = var_rec["units"]
+        record["variable"] = vid
+    except Exception as e:
+        eprint("Exception encountered {}".format(str(e)))
+
+
 def update_metadata(record, scanobj):
     if "variables" in scanobj:
         if "variable_id" in record:
 
             vid = record["variable_id"]
-            var_rec = scanobj["variables"][vid]
-            if "long_name" in var_rec.keys():
-                record["variable_long_name"] = var_rec["long_name"]
-            elif "info" in var_rec:
-                record["variable_long_name"] = var_rec["info"]
-            if "standard_name" in var_rec:
-                record["cf_standard_name"] = var_rec["standard_name"]
-            record["variable_units"] = var_rec["units"]
-            record["variable"] = vid
+            set_variable_metadata(record, scanobj['variables'], vid )
         else:
             eprint("TODO check project settings for variable extraction")
-            record["variable"] = "Multiple"
+            record["variable"] = MULTIPLE
     else:
         eprint("WARNING: no variables were extracted (is this CF compliant?)")
 
@@ -211,8 +239,12 @@ def update_metadata(record, scanobj):
         if "lon" in axes:
             lon = axes["lon"]
             geo_units.append(lon["units"])
-            record["east_degrees"] = lon["values"][-1]
-            record["west_degrees"] = lon["values"][0]
+            if 'values' not in lon.keys():
+                record["east_degrees"] = lon['subaxes']['0']["values"][-1]
+                record["west_degrees"] = lon['subaxes']['0']["values"][0]
+            else:
+                record["east_degrees"] = lon["values"][-1]
+                record["west_degrees"] = lon["values"][0]
         if "time" in axes:
             time_obj = axes["time"]
             time_units = time_obj["units"]
@@ -257,16 +289,60 @@ def update_metadata(record, scanobj):
     else:
         eprint("WARNING: No axes extracted from data files")
 
+def check_variable(dataset_rec):
+
+    if dataset_rec['project'] in VARIABLE_IN_FN and dataset_rec['variable'] == MULTIPLE:
+        field_check = VARIABLE_IN_FN[dataset_rec['project']]
+        key = [x for x in field_check.keys()][0]
+        value = field_check[key]
+
+        return (dataset_rec[key] == value)
+    return False
+
+# extracts the variable name from the file name
+def update_file(file_rec, scan_vars):
+
+    fparts = file_rec['title'].split('_')
+    flen =  len(fparts)
+
+    variable_name = "_".join(fparts[0:flen-2])
+
+    return set_variable_metadata(file_rec, scan_vars, variable_name)
+
 
 def iterate_files(dataset_rec, mapdata, scandata):
+
+    global verbose
+
     ret = []
+
     sz = 0
     last_file = None
+    scan_vars = None
+    scanfile = None
 
+    if 'file' in scandata:
+        scanfile = get_scanfile_dict(scandata['file'])
+        if not scanfile:
+            eprint("Warning no file metadata found!")
+        elif verbose:
+            print('scandict = ')
+            print(json.dumps(scanfile, indent=4))
+            print()
+    else:
+        eprint("Warning no file metadata found!")
+    if 'variables' in scandata:
+        scan_vars = scandata['variables']
+    #No else because we do a previous check in update matadata for dataset level variables.
     for maprec in mapdata:
         fullpath = maprec['file']
-        scanrec = scandata[fullpath]
-        file_rec = get_file(dataset_rec, maprec, scanrec)
+        if scanfile:
+            scanrec = scanfile[fullpath]
+            file_rec = get_file(dataset_rec, maprec, scanrec)
+            if check_variable(dataset_rec) and scan_vars:
+                update_file(file_rec, scan_vars)
+        else:
+            file_rec = get_file(dataset_rec, maprec, {})
         last_file = file_rec
         sz += file_rec["size"]
         ret.append(file_rec)
@@ -282,8 +358,12 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
     else:
         mapobj = mapdata
     scanobj = json.load(open(scanfilename))
-
+    
     rec = get_dataset(mapobj[0][0], scanobj['dataset'], data_node, index_node, replica)
+
+    if not rec:
+        return None
+
     update_metadata(rec, scanobj)
     rec["number_of_files"] = len(mapobj)  # place this better
 
@@ -292,25 +372,25 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
     else:
         xattrobj = {}
 
+
     if verbose:
         print("rec = ")
         print(json.dumps(rec, indent=4))
         print()
+
     for key in xattrobj:
         rec[key] = xattrobj[key]
 
+    assert('project' in rec)
     project = rec['project']
+
     mapdict = parse_map_arr(mapobj)
     if verbose:
         print('mapdict = ')
         print(json.dumps(mapdict, indent=4))
         print()
-    scandict = get_scanfile_dict(scanobj['file'])
-    if verbose:
-        print('scandict = ')
-        print(json.dumps(scandict, indent=4))
-        print()
-    ret, sz, access = iterate_files(rec, mapdict, scandict)
+    ret, sz, access = iterate_files(rec, mapdict, scanobj)
+
     rec["size"] = sz
     rec["access"] = access
     ret.append(rec)
