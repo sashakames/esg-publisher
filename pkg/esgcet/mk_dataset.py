@@ -128,23 +128,28 @@ def format_template(template, root, rel):
             return template.format(globus, root, rel)
         else:
             if not silent and not globus_printed:
-                print("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
+                eprint("WARNING: no Globus UUID defined")
                 globus_printed = True
-            return template.format(GLOBUS_UUID, root, rel)
+            return None
     elif "gsiftp" in template:
         if dtn != 'none':
             return template.format(dtn, root, rel)
         else:
             if not silent and not dtn_printed:
-                print("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
+                eprint("WARNING: no data transfer node defined")
                 dtn_printed = True
-            return template.format(DATA_TRANSFER_NODE, root, rel)
+            return None
     else:
         return template.format(data_node, root, rel)
 
+def prune_list(ll):
+    for x in ll:
+        if not x is None:
+            yield(x)
 
 def gen_urls(proj_root, rel_path):
-    return  [format_template(template, proj_root, rel_path) for template in URL_Templates]
+    res =prune_list([format_template(template, proj_root, rel_path) for template in URL_Templates])
+    return list(res)
 
 
 def get_file(dataset_rec, mapdata, fn_trid):
@@ -306,14 +311,24 @@ def update_file(file_rec, scan_vars):
 
 
 def iterate_files(dataset_rec, mapdata, scandata):
+
+    global verbose
+
     ret = []
+
     sz = 0
     last_file = None
+    scan_vars = None
+    scanfile = None
 
     if 'file' in scandata:
         scanfile = get_scanfile_dict(scandata['file'])
         if not scanfile:
             eprint("Warning no file metadata found!")
+        elif verbose:
+            print('scandict = ')
+            print(json.dumps(scanfile, indent=4))
+            print()
     else:
         eprint("Warning no file metadata found!")
     if 'variables' in scandata:
@@ -321,10 +336,13 @@ def iterate_files(dataset_rec, mapdata, scandata):
     #No else because we do a previous check in update matadata for dataset level variables.
     for maprec in mapdata:
         fullpath = maprec['file']
-        scanrec = scanfile[fullpath]
-        file_rec = get_file(dataset_rec, maprec, scanrec)
-        if check_variable(dataset_rec) and scan_vars:
-            update_file(file_rec, scan_vars)
+        if scanfile:
+            scanrec = scanfile[fullpath]
+            file_rec = get_file(dataset_rec, maprec, scanrec)
+            if check_variable(dataset_rec) and scan_vars:
+                update_file(file_rec, scan_vars)
+        else:
+            file_rec = get_file(dataset_rec, maprec, {})
         last_file = file_rec
         sz += file_rec["size"]
         ret.append(file_rec)
@@ -369,12 +387,7 @@ def get_records(mapdata, scanfilename, data_node, index_node, replica, xattrfn=N
         print('mapdict = ')
         print(json.dumps(mapdict, indent=4))
         print()
-    scandict = get_scanfile_dict(scanobj['file'])
-    if verbose:
-        print('scandict = ')
-        print(json.dumps(scandict, indent=4))
-        print()
-    ret, sz, access = iterate_files(rec, mapdict, scandict)
+    ret, sz, access = iterate_files(rec, mapdict, scanobj)
 
     rec["size"] = sz
     rec["access"] = access
