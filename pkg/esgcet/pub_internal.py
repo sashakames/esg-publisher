@@ -245,6 +245,9 @@ def run(fullmap):
     outname = os.path.basename(datafile)
     idx = outname.rfind('.')
 
+    out_json_data = None
+    new_json_data = None
+
     autstr = autoc_command + ' --out_pretty --out_json {} --files "{}/*.nc"'
     stat = os.system(autstr.format(scanfn, destpath))
     if os.WEXITSTATUS(stat) != 0:
@@ -267,6 +270,15 @@ def run(fullmap):
 
     if cmip6:
         if not silent:
+            print("Done.\nRunning activity check...")
+        try:
+            act.run(out_json_data)
+        except Exception as ex:
+            print("Error running activity check: " + str(ex), file=sys.stderr)
+            exit_cleanup(scan_file)
+            exit(1)
+
+        if not silent:
             print("Done.\nRunning pid cite...")
         try:
             pid_creds = json.loads(config['user']['pid_creds'])
@@ -281,18 +293,8 @@ def run(fullmap):
             print("Error running pid cite: " + str(ex), file=sys.stderr)
             exit_cleanup(scan_file)
             exit(1)
-        if not silent:
-            print("Done.\nRunning activity check...")
-        try:
-            act.run(new_json_data)
-        except Exception as ex:
-            print("Error running activity check: " + str(ex), file=sys.stderr)
-            exit_cleanup(scan_file)
-            exit(1)
     else:
         new_json_data = out_json_data
-
-
 
     if not silent:
         print("Done.\nUpdating...")
