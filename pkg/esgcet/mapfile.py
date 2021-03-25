@@ -23,7 +23,7 @@ def parse_map(map_data, project=None, normalize=False):
         if normalize:
             parts[1] = normalize_path(parts[1], project)
 
-        ret.append(parts)
+        ret.append([x.strip() for x in parts])
 
     return ret
 
