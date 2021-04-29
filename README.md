@@ -10,22 +10,21 @@
 
 # Clone this repository
 
-git clone https://github.com/lisi-w/esg-publisher.git
+git clone https://github.com/sashakames/esg-publisher.git
 
-# Checkout the gen-five-pkg branch
+# Checkout the e3sm-custom branch
 
 cd esg-publisher
-git checkout gen-five-pkg
+git checkout e3sm-custom
 
 # Ensure you have activate conda 
 # create an environment for testing with prereqs
-conda create -n esgf-pub-v5 -c conda-forge pip requests libnetcdf cmor # needed for CMIP6 publishing
+conda create -n esgf-pub-v5 -c conda-forge -c esgf-forge pip requests autocurator cmor  # cmor needed for CMIP6 publishing
 conda activate esgf-pub-v5
 pip install esgfpid # needed for publishing
 cd pkg
 python setup.py install 
-# Follow the autocurator instructions.  Use the esgf-pub-v5 environment for building that binary
-# See https://github.com/sashakames/autocurator 
+
 # edit $HOME/.esg/esg.ini for system-specific settings
 
 #  For CMIP6 publishing you need the cmor tables.  All files in CMIP6 must pass PrePARE. Options:
