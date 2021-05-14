@@ -33,7 +33,7 @@ verify=False, allow_redirects=True)
         except Exception as e:
             print("Some other error!", e )
         if not response:
-            return False
+            return 666
         return response.status_code
 
 
