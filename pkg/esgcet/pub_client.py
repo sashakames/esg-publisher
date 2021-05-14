@@ -25,12 +25,16 @@ verify=False, allow_redirects=True)
 
     def publish(self, xmldata):
 
+        response = None
         try:
             response = self.post_data(self.publishUrl, xmldata)
         except requests.exceptions.SSLError as e:
             print("SSL error!", e )
         except Exception as e:
             print("Some other error!", e )
+        if not response:
+            return False
+        return response.status_code
 
 
     def update(self, xmldata):

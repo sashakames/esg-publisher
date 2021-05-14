@@ -1,8 +1,7 @@
 from esgcet.pub_client import publisherClient
 
-import esgcet.list2json, sys, json, os
-import configparser as cfg
-from pathlib import Path
+import esgcet.list2json, sys
+from datetime import datetime
 
 
 def run(args):
@@ -21,5 +20,9 @@ def run(args):
         new_xml = esgcet.list2json.gen_xml(rec)
         if verbose:
             print(new_xml)
-        pubCli.publish(new_xml)
+        resp = pubCli.publish(new_xml)
+        if resp != 200:
+            the_time = datetime.now()
+            print(f"{the_time} ERROR: publication to index failed, code {resp}", sys.stderr)
+            exit(-resp)
 
