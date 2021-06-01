@@ -1,11 +1,7 @@
 from esgcet.args import PublisherArgs
-import esgcet.esgmigrate as migrate
 import os
-import json
 import sys
 from esgcet.settings import *
-import configparser as cfg
-from pathlib import Path
 
 from esgcet.pub_internal import ESGPubCore
 

@@ -233,7 +233,6 @@ class PublisherArgs:
         except:
             proj_config = None
 
-
         os.system("cert_path=" + cert)
 
         if pub.verify:
@@ -246,6 +245,15 @@ class PublisherArgs:
         else:
             auth = True
 
+        try:
+            non_netcdf = config['user']['non_netcdf'].lower()
+            if 'yes' in non_netcdf or 'true' in non_netcdf:
+                non_nc = True
+            else:
+                non_nc = False
+        except:
+            non_nc = False
+
         if globus == "none" and not silent:
             print("INFO: no Globus UUID defined. Using default: " + GLOBUS_UUID, file=sys.stderr)
 
@@ -257,7 +265,8 @@ class PublisherArgs:
                    "autoc_command": autoc_command, "index_node": index_node, "data_node": data_node,
                    "data_roots": data_roots, "globus": globus, "dtn": dtn, "replica": replica, "proj": project,
                    "json_file": json_file, "test": test, "user_project_config": proj_config, "verify": verify,
-                   "auth": auth, "skip_prepare" : skip_prepare}
+
+                   "auth": auth, "skip_prepare" : skip_prepare, "non_nc": non_nc}
         if fullmap:
             argdict["fullmap"] = fullmap
         elif pub["scan_file"] and pub["map_data"]:
@@ -281,6 +290,7 @@ class PublisherArgs:
             argdict["pid_creds"] = None
            # print("PID credentials not defined. Define in config file esg.ini.", file=sys.stderr)
            # exit(1)  TODO put check in project
+
 
         self.pubdict = argdict
         return argdict

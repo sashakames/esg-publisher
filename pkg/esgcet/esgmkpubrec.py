@@ -7,89 +7,26 @@ import json
 import os
 
 
+from pub_internal import ESGPubCore
 
+def run(pub_args):
 
-def run():
+    argdict = pub_args.get_dict()
 
-
+    pubcore = ESGPubCore()
 
     try:
-        map_json_data = json.load(open(a.map_data, 'r'))
+        map_json_data = json.load(open(argdict("mapdata"), 'r'))
     except:
         print("Error with argparse. Exiting.", file=sys.stderr)
         exit(1)
 
-    try:
-        scanfn = a.scan_file
-    except:
-        print("Error with argparse. Exiting.", file=sys.stderr)
-        exit(1)
+    scanfn = argdict("scan_file")
 
-    if a.data_node is None:
-        try:
-            data_node = config['user']['data_node']
-        except:
-            print("Error: data node not supplied in config or command line. Exiting.", file=sys.stderr)
-            exit(1)
-    else:
-        data_node = a.data_node
 
-    if a.index_node is None:
-        try:
-            index_node = config['user']['index_node']
-        except:
-            print("Error: index node not supplied in config or command line. Exiting.", file=sys.stderr)
-            exit(1)
-    else:
-        index_node = a.index_node
+    proj = pubcore.get_project(pub_args)
 
-    if a.set_replica and a.no_replica:
-        print("Error: replica publication simultaneously set and disabled.", file=sys.stderr)
-        exit(1)
-    elif a.set_replica:
-        replica = True
-    elif a.no_replica:
-        replica = False
-    else:
-        try:
-            r = config['user']['set_replica']
-            if 'yes' in r or 'true' in r:
-                replica = True
-            elif 'no' in r or 'false' in r:
-                replica = False
-            else:
-                print("Config file error: set_replica must be true, false, yes, or no.", file=sys.stderr)
-                exit(1)
-        except:
-            print("Set_replica not defined. Use --set-replica or --no-replica or define in config file.", file=sys.stderr)
-            exit(1)
-
-    try:
-        data_roots = json.loads(config['user']['data_roots'])
-        if data_roots == 'none':
-            print("Data roots undefined. Define in config file to create file metadata.", file=sys.stderr)
-            exit(1)
-    except:
-        print("Data roots undefined. Define in config file to create file metadata.", file=sys.stderr)
-        exit(1)
-
-    try:
-        globus = json.loads(config['user']['globus_uuid'])
-    except:
-        # globus undefined
-        globus = "none"
-
-    try:
-        dtn = config['user']['data_transfer_node']
-    except:
-        # dtn undefined
-        dtn = "none"
-
-    third_arg_mkd = False
-    if a.json is not None:
-        json_file = a.json
-        third_arg_mkd = True
-
+    out_json_data = proj.mk_dataset()
 
     try:
         if third_arg_mkd:
@@ -108,7 +45,9 @@ def run():
 
 
 def main():
+    pub_args = PublisherArgs()
 
+    run(pub_args)
 
 
 if __name__ == '__main__':
