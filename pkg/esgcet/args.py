@@ -12,9 +12,39 @@ DEFAULT_ESGINI = '/esg/config/esgcet'
 class PublisherArgs:
 
     def __init__(self):
-        pass
+        self.pubargs = None
+        self.pubdict = None
+
+    def get_mkdargs(self):
+
+        parser = argparse.ArgumentParser(description="Publish data sets to ESGF databases.")
+        home = str(Path.home())
+        def_config = home + "/.esg/esg.ini"
+        parser.add_argument("--set-replica", dest="set_replica", action="store_true",
+                            help="Enable replica publication.")
+        parser.add_argument("--no-replica", dest="no_replica", action="store_true", help="Disable replica publication.")
+        parser.add_argument("--scan-file", dest="scan_file", required=True, help="JSON output file from autocurator.")
+        parser.add_argument("--json", dest="json", default=None,
+                            help="Load attributes from a JSON file in .json form. The attributes will override any found in the DRS structure or global attributes.")
+        parser.add_argument("--data-node", dest="data_node", default=None, help="Specify data node.")
+        parser.add_argument("--index-node", dest="index_node", default=None, help="Specify index node.")
+        parser.add_argument("--map-data", dest="map_data", required=True,
+                            help="Mapfile json data converted using esgmapconv.")
+        parser.add_argument("--ini", "-i", dest="cfg", default=def_config, help="Path to config file.")
+        parser.add_argument("--out-file", dest="out_file", default=None,
+                            help="Optional output file destination. Default is stdout.")
+        parser.add_argument("--silent", dest="silent", action="store_true", help="Enable silent mode.")
+        parser.add_argument("--verbose", dest="verbose", action="store_true", help="Enable verbose mode.")
+
+        pub = parser.parse_args()
+
+        return pub
 
     def get_args(self):
+
+        if self.pubargs:
+            return self.pubargs
+
         parser = argparse.ArgumentParser(description="Publish data sets to ESGF databases.")
 
         # ANY FILE NAME INPUT: check first to make sure it exists
@@ -41,11 +71,19 @@ class PublisherArgs:
 
         pub = parser.parse_args()
 
+        self.pubargs = pub
         return pub
 
-    def get_dict(self, fullmap):
+    def get_dict(self, fullmap=None):
 
-        pub = self.get_args()
+        if self.pubdict:
+            return self.pubdict
+
+        if (fullmap):
+            pub = self.get_args()
+        else:
+            pub = self.get_mkdargs()
+
         json_file = pub.json
 
         if pub.migrate:
@@ -214,27 +252,35 @@ class PublisherArgs:
         if dtn == "none" and not silent:
             print("INFO: no data transfer node defined. Using default: " + DATA_TRANSFER_NODE, file=sys.stderr)
 
-        argdict = {"fullmap": fullmap, "silent": silent, "verbose": verbose,
+        argdict = {"silent": silent, "verbose": verbose,
                    "cert": cert,
                    "autoc_command": autoc_command, "index_node": index_node, "data_node": data_node,
                    "data_roots": data_roots, "globus": globus, "dtn": dtn, "replica": replica, "proj": project,
                    "json_file": json_file, "test": test, "user_project_config": proj_config, "verify": verify,
                    "auth": auth, "skip_prepare" : skip_prepare}
+        if fullmap:
+            argdict["fullmap"] = fullmap
+        elif pub["scan_file"] and pub["map_data"]:
+            argdict["scan_file"] = pub["scan_file"]
+            argdict["map_data"] = pub["map_data"]
+            argdict["out_file"] = pub["out_file"]
 
-        if project == "CMIP6" or project == "input4mips":
-            if pub.cmor_path is None:
-                try:
-                    argdict["cmor_tables"] = config['user']['cmor_path']
-                except:
-                    print("No path for CMOR tables defined. Use --cmor-tables option or define in config file.",
-                          file=sys.stderr)
-                    exit(1)
-            else:
-                argdict["cmor_tables"] = pub.cmor_path
+        if pub.cmor_path is None:
+            try:
+                argdict["cmor_tables"] = config['user']['cmor_path']
+            except:
+                argdict["cmor_tables"] = None
+                # print("No path for CMOR tables defined. Use --cmor-tables option or define in config file.",
+                #       file=sys.stderr)
+                # exit(1) TODO put check in project
+        else:
+            argdict["cmor_tables"] = pub.cmor_path
         try:
             argdict["pid_creds"] = json.loads(config['user']['pid_creds'])
         except:
-            print("PID credentials not defined. Define in config file esg.ini.", file=sys.stderr)
-            exit(1)
+            argdict["pid_creds"] = None
+           # print("PID credentials not defined. Define in config file esg.ini.", file=sys.stderr)
+           # exit(1)  TODO put check in project
 
+        self.pubdict = argdict
         return argdict
