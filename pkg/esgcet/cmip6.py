@@ -16,6 +16,13 @@ class cmip6(GenericPublisher):
 
     def __init__(self, argdict):
         # maybe get args here
+        self.set_core_params(argdict)
+        self.cmor_tables = argdict["cmor_tables"]
+
+        if self.replica:
+            self.skip_prepare= argdict["skip-prepare"]
+
+    def set_core_params(self, argdict):
         self.fullmap = argdict["fullmap"]
         self.silent = argdict["silent"]
         self.verbose = argdict["verbose"]
@@ -29,16 +36,21 @@ class cmip6(GenericPublisher):
         self.replica = argdict["replica"]
         self.proj = argdict["proj"]
         self.json_file = argdict["json_file"]
+
         self.pid_creds = argdict["pid_creds"]
-        self.cmor_tables = argdict["cmor_tables"]
+        if not self.pid_creds:
+            print("PID credentials not defined. Define in config file esg.ini.", file=sys.stderr)
+            exit(1)  TODO put check in project
         self.test = argdict["test"]
         self.proj_config = argdict["user_project_config"]
         self.verify = argdict["verify"]
         self.auth = argdict["auth"]
-        if self.replica:
-            self.skip_prepare= argdict["skip-prepare"]
 
     def prepare_internal(self, json_map, cmor_tables):
+        if not cmor_tables:
+            print("No path for CMOR tables defined. Use --cmor-tables option or define in config file.",
+                   file=sys.stderr)
+            exit(1)
         try:
             print("iterating through filenames for PrePARE (internal version)...")
             validator = PrePARE.PrePARE
@@ -52,7 +64,7 @@ class cmip6(GenericPublisher):
             exit(1)
 
     def pid(self, out_json_data):
-      
+
         pid = ESGPubPidCite(out_json_data, self.pid_creds, self.data_node, test=self.test, silent=self.silent, verbose=self.verbose)
         check = FieldCheck(self.cmor_tables, silent=self.silent)
 
