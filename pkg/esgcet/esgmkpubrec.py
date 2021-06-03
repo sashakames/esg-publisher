@@ -1,13 +1,9 @@
-
-
-from pathlib import Path
-import configparser as cfg
 import sys
 import json
 import os
 
-
-from pub_internal import ESGPubCore
+from esgcet.pub_internal import ESGPubCore
+from esgcet.args import PublisherArgs
 
 def run(pub_args):
 
@@ -18,30 +14,18 @@ def run(pub_args):
     try:
         map_json_data = json.load(open(argdict("mapdata"), 'r'))
     except:
-        print("Error with argparse. Exiting.", file=sys.stderr)
+        print("Error with map data. Exiting.", file=sys.stderr)
         exit(1)
-
-    scanfn = argdict("scan_file")
-
 
     proj = pubcore.get_project(pub_args)
+    out_json_data = proj.mk_dataset(map_json_data)
 
-    out_json_data = proj.mk_dataset()
-
-    try:
-        if third_arg_mkd:
-            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, data_roots, globus, dtn, silent, verbose, json_file])
-        else:
-            out_json_data = mkd.run([map_json_data, scanfn, data_node, index_node, replica, data_roots, globus, dtn, silent, verbose])
-    except Exception as ex:
-        print("Error making dataset: " + str(ex), file=sys.stderr)
-        exit(1)
-
-    if p:
-        print(json.dumps(out_json_data))
-    else:
+    if "outfile" in argdict:
+        outfile = argdict["outfile"]
         with open(outfile, 'w') as of:
             json.dump(out_json_data, of)
+    else:
+        print(json.dumps(out_json_data))
 
 
 def main():
