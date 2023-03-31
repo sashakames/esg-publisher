@@ -168,9 +168,6 @@ def archive_maps(files):
 def main():
     run = True
     count = 0
-    last_err_count = -1
-    redo_errs = False
-    errs_done = False
     print("USER WARNING: This job will continue to run until stopped. Use text file flag to quit job.", file=sys.stderr, flush=True)
     while run:
         if DEBUG:
@@ -187,33 +184,13 @@ def main():
             continue
         if done_count >= 100000:
             archive_maps(done_files)
-        if count == 0 and not redo_errs:
+        if count == 0:
             print("No maps left to do.", file=sys.stderr, flush=True)
-            if not errs_done:
-                print("Re checking errors...", file=sys.stderr, flush=True)
-                redo_errs = True
-                continue
             print("Going to sleep.", file=sys.stderr, flush=True)
             time.sleep(1000)
             continue
         check_flag()
-        if redo_errs:
-            try:
-                files = os.listdir(ERR_PREFIX)
-                count = len(files)
-                print(f"redo_errs: {count} files found") 
-                if count == 7 or count == last_err_count:
-                    print("No unsorted errors left to retry.", file=sys.stderr, flush=True)
-                    errs_done = True
-                    redo_errs = False
-                    continue
-                else:
-                    count -= 7
-                last_err_count = count
-            except:
-                print("Filesystem error likely. Will attempt to resume in 5 minutes.", file=sys.stderr, flush=True)
-                time.sleep(300)
-                continue
+
         jobs = []
         logs = []
         p_list = []
@@ -221,10 +198,8 @@ def main():
         timeout = []
         for f in files:
             check_flag()
-            if redo_errs:
-                fullmap = ERR_PREFIX + f
-            else:
-                fullmap = MAP_PREFIX + f
+
+            fullmap = MAP_PREFIX + f
             if DEBUG:
                 print(f"file loop {fullmap}", file=sys.stderr, flush=True)
             if fullmap[-4:] != ".map":
@@ -354,9 +329,6 @@ def main():
                                 else:
                                     send_msg(str(ex), EMAIL)
                                     exit(1)
-                        elif redo_errs:
-                            shutil.move(fullmap, FAIL_DIR + "misc/" + m)
-                            shutil.move(log, ERROR_LOGS + "misc/" + l)
                         else:
                             try:
                                 shutil.move(fullmap, FAIL_DIR + m)
@@ -384,12 +356,6 @@ def main():
                 p_list = []
                 maps = []
                 check_flag()
-                if redo_errs:
-                    print("rechecking errors.", file=sys.stderr, flush=True)
-                    #redo_errs = False
-                    #errs_done = True
-                    #                    files = []
-                    break
                 if gotosleep:
                     print("Going to sleep to resolve filesystem/server error. Will resume in 10 minutes.", file=sys.stderr, flush=True)
                     time.sleep(600)
