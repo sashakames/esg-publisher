@@ -1,7 +1,6 @@
 # ESGF Publisher
-
+[![Documentation Status](https://readthedocs.org/projects/esg-publisher/badge/?version=refactor)](https://esg-publisher.readthedocs.io/en/refactor/?badge=refactor)
 ##### The v5 version of the publisher, scans data and writes metadata to the ESGF index.
-The PostgreSQL database and THREDDS catalogs are not used
 
 ## How to test it (with conda)
 
@@ -11,27 +10,30 @@ The PostgreSQL database and THREDDS catalogs are not used
 
 # Clone this repository
 
-git clone https://github.com/sashakames/esg-publisher.git
+git clone https://github.com/lisi-w/esg-publisher.git
 
-# Checkout the gen-five branch
+# Checkout the refactor branch
 
 cd esg-publisher
-git checkout gen-five
+git checkout refactor
 
 # Ensure you have activate conda 
 # create an environment for testing with prereqs
-conda create -n esgf-pub-v5 -c conda-forge gcc pip requests libnetcdf cmor # needed for CMIP6 publishing
-
-# Follow the autocurator instructions.  Use the esgf-pub-v5 environment for building that binary
-# See https://github.com/sashakames/autocurator 
-# edit gen-five/src/python/settings.py  and gen-five/src/workflow/esgpublish.sh for system-specific settings
+conda create -n esgf-pub -c conda-forge pip requests libnetcdf cmor autocurator
+# CMOR needed for CMIP6 publishing
+conda activate esgf-pub
+pip install esgfpid # needed for publishing
+cd pkg
+python setup.py install 
+# edit $HOME/.esg/esg.ini for system-specific settings
 
 #  For CMIP6 publishing you need the cmor tables.  All files in CMIP6 must pass PrePARE. Options:
 #  (1)  git clone https://github.com/PCMDI/cmip6-cmor-tables
 #  (2)  If you have esgprep (esgf-prepare) installed, run esgfetchtables
-#  update the $cmor_tables variable in esgpublish.sh with path to tables [ Tables from (1) | master from (2) ] above
+#  edit cmor_path in esg.ini or use --cmor-tables arg to point to the directory containing the tables
 
-# run the shell-script with a mapfile
+# run the executable with a mapfile
 
-bash gen-five/src/workflow/esgpublish.sh <mapfile>
+esgpublish --map <mapfile>
 
+# for more details on the other commands, see our docs

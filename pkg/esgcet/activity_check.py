@@ -1,21 +1,25 @@
-import sys, json
+import sys, json, os
+import esgcet.logger as logger
+
+from esgcet.settings import SOURCE_ID_LIMITS
+
+log = logger.Logger()
 
 
-CMIPCV="/export/ames4/git/CMIP6_CVs"
-SRC_ID_JSON="CMIP6_source_id.json"
-
-IDX = -1  # index for the dataset record
-ARGS = 1
 class FieldCheck(object):
 
-    def __init__(self, cv_path):
-
-        jobj = json.load(open(cv_path))
+    def __init__(self, cmor_path, silent=False):
+        cv_path = "{}/CMIP6_CV.json".format(cmor_path)
+        jobj = json.load(open(cv_path))["CV"]
         self.sid_dict = jobj["source_id"]
+        self.silent = silent
+        self.idx = -1
+        self.publog = log.return_logger('Activity Check', silent=silent)
+        self.project_key = "cmip6"
+        self.project_str = "CMIP6"
 
 
-    def check_fields(self, source_id, activity_id):
-
+    def check_activity(self, source_id, activity_id):
 
         if source_id not in self.sid_dict:
             return False
@@ -23,34 +27,36 @@ class FieldCheck(object):
 
         return activity_id in rec["activity_participation"]
 
+    def check_institution(self, source_id, inst_id):
 
-def main(args):
+        if source_id not in self.sid_dict:
+            return False
+        rec = self.sid_dict[source_id]
 
-    cv_path = "{}/{}".format(CMIPCV, SRC_ID_JSON)
-    fc = FieldCheck(cv_path)
+        return inst_id in rec["institution_id"]
 
-    if len(args) < (ARGS):
-        print("Missing required arguments")
-        exit(0)
+    def run_check(self, input_rec):
+        src_id = input_rec[self.idx]['source_id']
+        act_id = input_rec[self.idx]['activity_drs']
+        inst_id = input_rec[self.idx]['institution_id']
 
-    try:
-        input_rec = json.load(open(args[0]))
-    except Exception as e:
-        print("Error opening input json format for {}: ".format(args[0],e))
-        exit(1)
+        if not src_id in self.sid_dict: 
+            self.publog.error("Source_id {} is unregistered with the {} Controlled Vocabulary (CV). Publication halted".format(src_id, self.project_str))
+            self.publog.error("If you think this message has been received in error, please update your CV source repository")
+            raise UserWarning
 
-    # Refactor for several cases: (1) standalone with main() (2) called by larger publisher module (3) query results from search
+        if self.project_key in SOURCE_ID_LIMITS and len(src_id) > SOURCE_ID_LIMITS[self.project_key]:
+            self.publog.error(f"Source_id {src_id} exceeds the {SOURCE_ID_LIMITS[self.project_key]} character limit for project {self.project_str}. Publication halted.")
+            raise UserWarning          
 
-    src_id = input_rec[IDX]['source_id']
-    act_id = input_rec[IDX]['activity_drs']
- 
-    if fc.check_fields(src_id, act_id):
-        print("INFO: passed source_id registration test for {}".format(src_id))
-    else:
-        print("ERROR: source_id {} is not registered for participation in CMIP6 activity {}. Publication halted".format(src_id, act_id))
-        print("If you think this message has been received in error, please update your CV source repository")
+        if not self.check_activity(src_id, act_id):
+            self.publog.error("Source_id {} is not registered for participation in CMIP6 activity {}. Publication halted".format(src_id, act_id))
+            self.publog.error("If you think this message has been received in error, please update your CV source repository")
+            raise UserWarning
+        if not self.check_institution(src_id, inst_id):
+            self.publog.error("Institution_id {} is not registered to contribute to source_id {}. Publication halted".format(inst_id, src_id))
+            self.publog.info("If you think this message has been received in error, please update your CV source repository")
+            raise UserWarning
 
-
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
+        self.publog.info("Passed source_id registration test for {}".format(src_id))
+        

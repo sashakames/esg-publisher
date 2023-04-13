@@ -1,71 +1,71 @@
-import sys, json
+import json
 from datetime import datetime
+import traceback
+import esgcet.logger as logger
 
-ARGS = 1
+log = logger.Logger()
 
-def normalize_path(path, project):
-    pparts = path.split('/')
-    idx = pparts.index(project)
-    if idx < 0:
-        raise(BaseException("Incorrect Project in File Path!"))
-    proj_root = '/'.join(pparts[0:idx])
-    return('/'.join(pparts[idx:]), proj_root)
+class ESGPubMapConv:
 
-'''  Input: 
-'''
-def parse_map(map_data, project=None, normalize=False):
+    def __init__(self, mapfilename, project=None, silent=False):
 
-    ret = []    
-    for line in map_data:
+        self.mapfilename = mapfilename
+        self.project = project
+        self.map_data_arr = []
+        self.map_json = {}
+        self.silent = silent
+        self.publog = log.return_logger('Mapfile Conversion', silent=silent)
 
-        parts = line.rstrip().split(' | ')
-        if normalize:
-            parts[1] = normalize_path(parts[1], project)
+    def parse_map(self, mountpoints=None):
+        """  """
+        ret = []
+        for line in self.map_data:
 
-        ret.append(parts)
+            parts = line.rstrip().split(' | ')
+            if mountpoints and self.project:
+                mapstr = parts[1]
+                root = mapstr.split(self.project)[0][:-1]
+                parts[1] = mapstr.replace(root, mountpoints[root])
 
-    return ret
+            ret.append(parts)
 
+        self.map_data_arr = ret
+        return ret
 
-''' Input: Takes a 2-D array representation of the parsed map. 
-Returns: file records.  assumes that the files all belong to the same dataset
-'''
-def parse_map_arr(map_data):
-    ret = []
-    for lst in map_data:
-        rec = {}
-        rec['file'] = lst[1]
-        rec['size'] = int(lst[2])
-        for x in lst[3:]:
-            parts = x.split('=')
-            if parts[0] == 'mod_time':
-                rec[parts[0]] = datetime.utcfromtimestamp(float(parts[1])).isoformat()
-            else:
-                rec[parts[0]] = parts[1]
-        ret.append(rec)
-    return ret
+    def set_map_arr(self, maparr):
+        self.map_data_arr = maparr
 
+    def parse_map_arr(self):
+        ''' Input: Takes a 2-D array representation of the parsed map.
+        Returns: file records.  assumes that the files all belong to the same dataset
+        '''
+        if len(self.map_data_arr) == 0:
+            self.publog.warning("Empty map data")
 
+        ret = []
+        for lst in self.map_data_arr:
+            rec = {}
+            rec['file'] = lst[1]
+            rec['size'] = int(lst[2])
+            for x in lst[3:]:
+                parts = x.split('=')
+                if parts[0] == 'mod_time':
+                    rec["timestamp"] = datetime.utcfromtimestamp(float(parts[1])).isoformat()[0:19] + "Z"
+                    assert(rec["timestamp"].find('.') == -1)
+                else:
+                    rec[parts[0]] = parts[1]
+            ret.append(rec)
+        return ret
 
-def map_entry(map_json, project, fs_root):
-    norm_path = normalize_path(map_json['file'], project)
-    abs_path = "{}/{}".format(fs_root, norm_path)
-    outarr = []
+    def load_map_json(self):
+        try:
+            self.map_json = json.load(open(self.mapfilename))
+        except:
+            self.publog.error("Could not open json data {}".format(self.mapfilename))
 
-    outarr.append(map_json['id'])
-    outarr.append(abs_path)
-    outarr.append(map_json['size'])
-    for x in map_json:
-        if not x in ['id', 'file', 'size']:
-            outarr.append("{}={}".format(x,map_json[x]))
-    return ' | '.join(outarr)
+    def mapfilerun(self, mountpoints=None):
 
-def main(args):
+        with open(self.mapfilename) as self.map_data:
+            ret = self.parse_map(mountpoints)
 
-    if (len(args) < ARGS):
-        print("Missing required arguments!")
-        exit(0)
-
-    with open(args[0]) as map_data:
-        ret = parse_map(map_data)
-    return ret
+        return ret
