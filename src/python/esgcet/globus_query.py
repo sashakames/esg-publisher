@@ -21,7 +21,7 @@ SEARCH_TEMPLATE = {
         ],
     }
 
-
+GLOBUS_CMD = "/home/jovyan/conda-envs/esgf-pub520/bin/globus"
 
 class ESGGlobusQuery():
 
@@ -32,12 +32,14 @@ class ESGGlobusQuery():
     def _add_filter(self, name, value):
         tmpfilter = copy.deepcopy(FILTER_TEMPLATE)
         tmpfilter["field_name"] = name
+        # if type(value) is list:
+        #     tmpfilter["type"] = "match_any"
         tmpfilter["values"].append(value)
         return tmpfilter
     
     def globus_get_record(self, subj):
         print(f"DEBUG {subj}")
-        proc = Popen(["globus", "search", "subject", "show", self._UUID, subj[0].rstrip()], stdout=PIPE)
+        proc = Popen([GLOBUS_CMD, "search", "subject", "show", self._UUID, subj[0].rstrip()], stdout=PIPE)
 #        cmdstr = f"globus search subject show {self._UUID} '{subj.strip()}'"
 #        proc = Popen(cmdstr            , shell=True, stdout=PIPE)
  #       print(f"DEBUG {cmdstr}")
@@ -48,11 +50,17 @@ class ESGGlobusQuery():
 #        print(f"DEBUG {res}")
         return json.load(proc.stdout)
 
-    def query_file_records(self, dataset_id, post_proc=True, latest=True):
+    def query_file_records(self, dataset_id, post_proc=True, latest=True, crit={}):
         q = copy.deepcopy(SEARCH_TEMPLATE)
         q["filters"].append(self._add_filter("type", "File"))
-        q["filters"].append(self._add_filter("dataset_id", dataset_id))
-
+        if dataset_id:
+            q["filters"].append(self._add_filter("dataset_id", dataset_id))
+        elif crit:
+            pass # TODO add filter criteria
+        else:
+            print("WARNING no search criteria or dataset ID")
+            return None
+            
         if latest:
             q["filters"].append(self._add_filter("latest", "true"))
         res = self._run_query(q, False)
@@ -87,7 +95,7 @@ class ESGGlobusQuery():
         print(f"DEBUG: to {temp.name}")
         temp.close()
 
-        subproc = Popen(["globus", "search", "query", self._UUID, "--query-document",temp.name], stdout=PIPE)
+        subproc = Popen([GLOBUS_CMD, "search", "query", self._UUID, "--query-document",temp.name], stdout=PIPE)
 
         subproc.wait()
         
