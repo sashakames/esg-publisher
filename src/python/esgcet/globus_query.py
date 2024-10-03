@@ -32,9 +32,11 @@ class ESGGlobusQuery():
     def _add_filter(self, name, value):
         tmpfilter = copy.deepcopy(FILTER_TEMPLATE)
         tmpfilter["field_name"] = name
-        # if type(value) is list:
-        #     tmpfilter["type"] = "match_any"
-        tmpfilter["values"].append(value)
+        if type(value) is list:
+            tmpfilter["type"] = "match_any"
+            tmpfilter["values"] = value
+        else:
+            tmpfilter["values"].append(value)
         return tmpfilter
     
     def globus_get_record(self, subj):
