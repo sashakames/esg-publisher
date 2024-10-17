@@ -224,7 +224,7 @@ def main():
             maps.append(fullmap)
             log = TMP_DIR + f + ".log"
             logs.append(log)
-            pub_cmd = ["esgpublish", "--ini", INI_FILE, "--map", fullmap]
+            pub_cmd = ["esgpublish","--no-auth" ,"--ini", INI_FILE, "--map", fullmap]
             jobs.append(pub_cmd)
             gotosleep = False
             check_flag()
