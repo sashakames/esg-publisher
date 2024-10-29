@@ -21,7 +21,7 @@ SEARCH_TEMPLATE = {
         ],
     }
 
-GLOBUS_CMD = "/home/jovyan/conda-envs/esgf-pub520/bin/globus"
+GLOBUS_CMD = "globus"  # "/home/jovyan/conda-envs/esgf-pub520/bin/globus"
 
 class ESGGlobusQuery():
 
