@@ -1,20 +1,7 @@
 Installation
 ============
 
-Conda & Required Packages
--------------------------
-
-We recommend creating a conda env before installing ``esgcet`` ::
-
-    conda create -n esgf-pub -c conda-forge -c esgf-forge pip libnetcdf cmor autocurator esgconfigparser
-    conda activate esgf-pub
-
-
-You will also need to install ``esgfpid`` using pip::
-
-    pip install esgfpid
-
-NOTE: you will need a functioning version of ``autocurator`` in order to run the publisher, in addition to downloading the CMOR tables. See those pages for more info.  The ``autocurator`` package in the ``esgf-forge`` conda channel provides a working albeit not the most recent version of this module.
+We recommend creating a ``conda`` environment or ``venv`` for running the esg publisher.
 
 Pip Install
 -----------
@@ -22,47 +9,57 @@ Pip Install
 Use the following command to install ``esgcet`` into a previously created conda environment: ::
 
     conda activate esgf-pub
-    pip install esgcet==5.1.0b13  # Must specify version for Beta release
+    pip install esgcet 
+    esgpublish --version #  Ensure you have upgraded to v5.2.4
 
+
+All publisher requirements are installed via ``pip`` except for the CMOR tables (see below).
 
 Installing esgcet via git
 -------------------------
 
-
 To install esgcet by cloning our github repository (useful if you want to modiy the software): first, you should ensure you have a suitable python in your environment (see below for information on conda, etc.), and then run::
 
-    git clone http://github.com/ESGF/esg-publisher.git -b refactor
+    git clone http://github.com/ESGF/esg-publisher.git 
     cd esg-publisher
-    cd pkg
-    python3 setup.py install
+    cd src/python
+    pip install -e .  # You can modify the source in place
+    esgpublish --version  # Confirm that v5.2.4 has been installed
+
+Now you will be able to call all commands in this package from any directory.  
 
 
-Now you will be able to call all commands in this package from any directory. A default config file, ``esg.ini`` will populate in ``$HOME/.esg`` where ``$HOME`` is your home directory.
-
-NOTE: if you are intending to publish CMIP6 data, the publisher will run the PrePARE module to check all file metadata.  To enable this procedure, it is necessry to download CMOR tables before the publisher will successfully run. See those pages for more info.
+NOTE: if you are intending to publish CMIP6 data, the publisher will run the PrePARE module to check all file metadata.  To enable this procedure, it is necessry to download CMOR tables before the publisher will successfully run. See those pages for more info (https://pcmdi.github.io/CMIP6).
 
 
-Config File (esg.ini)
----------------------
 
-The config file will contain the following settings:
+Config File (esg.yaml)
+----------------------
 
- * version
-    * This will be predefined in the [DEFAULT] section, it is used by setup to determine at time of install if your config file has all the latest settings.
+Starting with ``v5.2.0`` the ESGF Publisher uses a .yaml file for configuration.  Download a copy of the default config file ``esg.yaml`` to the default directory,
+ or see below regarding migrating a previous config  ::
+
+   wget https://raw.githubusercontent.com/ESGF/esg-publisher/refactor/src/python/esg.yaml
+   mkdir $HOME/.esg
+   cp esg.yaml $HOME/.esg
+
+The config file will contain the following settings, most required settings are also available as command line arguments:
+
  * data_node
-    * Required. This is the ESGF node at which the data is stored that you are publishing. It will be concatenated with the dataset_id to form the full id for your dataset.
+    * Required. This is the ESGF node (Fully-Qualified Domain Name) at which the data is stored that you are publishing. It will be concatenated with the dataset_id (instance_id) to form the full id for your dataset.
  * index_node
-    * Required. This is the ESGF node where your dataset will be published and indexed. You can then retrieve it or see related metadata by using the ESGF Search API at that index node.
+    * Required. This is the ESGF node (Fully-Qualified Domain Name) where your dataset will be published and indexed. You can then retrieve it or see related metadata by using the ESGF Search API at that index node.
  * cmor_path
-    * Required for CMIP6. This is a full absolute path to a directory containing CMOR tables, used by the publisher to run PrePARE to verify the structure of CMIP6 data. Example: /usr/local/cmip6-cmor-tables/Tables
+    * Required for CMIP6. This is a full absolute path to a directory containing CMOR tables, used by the publisher to run PrePARE to verify the structure of CMIP6 data. Example: /usr/local/cmip6-cmor-tables/Tables  This is either the cmor tables repo cloned from github or prepared using the ``esgfetctables`` tool part of ``esgf-prepare``
  * autoc_path
-    * Optional. This is the path for the autocurator executable. The default assumes that you have installed it via conda. If you have not installed it via conda, please replace with a file path to your installed binary.
+    * Optional. This is the path for the autocurator executable.  The default assumes that you have installed it via conda. If you have not installed it via conda, please replace with a file path to your installed binary.  If set to ``none`` or removed, the publisher will default to scanning data using XArrary.
  * data_roots
-    * Required. Must be in a json string loadable by python. Maps file roots to names that appears in urls.
+    * Required. These are paths where you place your project data for publication, typically within mounted large storage systems, on the local server where running the publisher.  Each entry maps the path to a logical subdirectory within a data url on the datanode.  Please note two configurations (1) these may be different from the data node mounts --or-- (2) may also appear in data node setup within ``esgf-docker`` configuations (Ansible playbooks or Helm charts) if the local publishing node uses the same mounts. Contact your node/site administrator for more info.
  * mountpoint_map
-    * Optional. Must be in a json string loadable by python. Changes specified sym link file roots in mapfile to actual file roots like so: {"/symlink/dir": "/actual/path"}
+    * Optional. Must be in yaml dictionary format.  Specifies an additonal mapping for the data root mounts that appear in the input mapfiles to the mounted data root on the host running the publisher, in the event mapfile generation occurred on a different host where the data resided at a different mountpoint.
+    Changes specified "aliased" roots in mapfile to actual file roots like so: /source/path/in/mapfiles: "/actual/path/to/data"
  * cert
-    * Required, unless running in ``--no-auth`` mode. This is the full path to the certificate file used for publishing. Default assumes a file "cert.pem" in your current directory. Replace to override.
+    * Optional. This is the full path to the certificate file used for publishing if publishing to a legacy ``esg-search`` site requiring authorization.
  * test
     * Optional. This can be set to True or False, and it will run the esgfpid service in test mode. Default assumes False. Override if you are not doing production publishing.
  * project
@@ -70,15 +67,15 @@ The config file will contain the following settings:
  * non_netcdf
     * Optional. Enable or disable publication settings for non NetCDF data, default assumes False.
  * set_replica
-    * Optional. Enable or disable replica publication settings. Default assumes False, or replica publication off.
+    * Optional. Enable or disable replica publication settings, for sites that publish replica data. Default assumes False, or replica publication off (original data publication).
  * globus_uuid
     * Optional. Specify the UUID for your site Globus endpoint as configured in the Globus webapp.  Default leaves out Globus URL from dataset metadata.
  * data_transfer_node
     * Optional. If you run the GridFTP service, set the hostname of that node, whether it the same as your data node or a sepearte Data Transfer Node for gsiftp urls in file records.  Default of "none" will omit.
  * pid_creds
-    * Settings and credentials for RabbitMQ server access for the PID sefvice, required for some projects (CMIP6, input4MIPs). Input esgfpid credentials in a json loadable string.
+    * Settings and credentials for RabbitMQ server access for the PID sefvice, required for some projects (CMIP6, input4MIPs). 
  * user_project_config
-    * Optional. If using a self-defined project compatible with our generic publisher, put DRS and CONST_ATTR into a json loadable dictionary.
+    * Optional. If using a self-defined project compatible with our generic publisher, put DRS and CONST_ATTR in a dictionary designated by project.
  * silent
     * Optional. Enable or disable silent mode, which suppresses all INFO logging messages.  Errors and messages from sub-modules are not suppressed. Default is False, silent mode disabled.
  * verbose
@@ -90,15 +87,14 @@ The config file will contain the following settings:
  * archive_depth
     * Optional. (Required when enable_archive = True) sets the directory depth of subdirectories to create/use in the xml archive. (see :ref:`arch_info`)
 
-Fill out the necessary variables, and either leave or override the optional configurations. Note that the section the publisher reads is the ``user`` section, not the default nor example.
-Example config settings can be found in the default esg.ini config file which will be created at ``$HOME/.esg/esg.ini`` when you install ``esgcet``.
+Fill out the necessary variables, and either leave or override the optional configurations.
+Example config settings can be found in the default esg.ini config file which will be created at ``$HOME/.esg/esg.yaml`` when you install ``esgcet``.
 Note that while the ``cmor_path`` variable points to a directory, other filepaths must be complete, such as ``autoc_path`` and ``cert``. This applies to the command line arguments for these as well.
 Additionally, a *required* setting if omitted can be satisfied via inclusion as ccommand line arguments.
 
 
 If you have an old config file from the previous iteration of the publisher, you can use ``esgmigrate`` to migrate over those settings to a new config file which can be read by the current publisher.
 See that page for more info.
-
 
 Project Configuration
 ---------------------
@@ -112,12 +108,42 @@ If your project desires to use the features of CMIP6 included extracted Global A
 config file property and assign to your custom project name within the ``user_project_config``.  The project name must be overridden using ``CONST_ATTR`` ``project setting`` (see example below).  If you CMIP6 project wishes to register PIDs, you must assign a ``pid_prefix`` within 
 config settings.
 
-Example CMIP6 cloned project 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To configure a project let us use *primavera* as an example.   Use the following: ::
+Example Config
+^^^^^^^^^^^^^^
 
-   cmip6_clone = primavera
-   user_project_config = { "primavera" : { "CONST_ATTR" : { "project" : "primavera"}, "pid_prefix" : "21.14100" } }
+The following contains example ``.yaml`` code and configures the *primavera* project as a user-defined `cloned` project:
+
+..  code-block:: yaml
+
+   cmip6_clone: primavera
+   cmor_path: /path/to/cmip6-cmor-tables/Tables
+   data_node: esgf-fake-test.llnl.gov
+   data_roots:
+      /mounted/path/to/data: data_in_url
+   data_transfer_node: aimsdtn2.llnl.gov
+   force_prepare: 'false'
+   globus_uuid: 415a6320-e49c-11e5-9798-22000b9da45e
+   index_node: esgf-fedtest.llnl.gov
+   pid_creds:
+      aims4.llnl.gov:
+         password: password
+         port: 7070
+         priority: 1
+         ssl_enabled: true
+         user: esgf-publisher
+         vhost: esgf-pid
+   project: none
+   set_replica: 'true'
+   silent: 'false'
+   skip_prepare: 'true'
+   test: 'true'
+   user_project_config:
+      primavera:
+         CONST_ATTR:
+            project: primavera
+         pid_prefix: '21.14100'
+   verbose: 'false'
+
 
 
 Run Time Args
@@ -125,5 +151,6 @@ Run Time Args
 
 If you prefer to set your configuration to publish at runtime, the ``esgpublish`` command has several optional command line arguments which will override options set in the config file.  
 For instance, if you use the ``--cmor-tables`` command line argument to set the path to the cmor tables directory, that will override anything written in the config file under ``cmor_path``.
-If you used the old version of the publisher, you should note that the command line argument ``-ini`` which points to your config file must be a complete path, not the directory as it was in the previous version.
+
+If you used the old (v4 or earlier) version of the publisher, you should note that the command line argument ``--config`` which points to your config file must be a complete path, not the directory as it was in the previous version.
 More details can be found in the ``esgpublish`` section.  Some settings are not available on the command line and must be placed in the config file, such as the xml "archive" utility.

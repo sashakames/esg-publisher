@@ -1,6 +1,48 @@
 Release Notes
 =============
 
+v5.2.4
+------
+
+* Bugfixes including:
+  * obs/input4MIPs publishing
+  * ``cert`` optional cleanup
+  * unpublication of PIDs 
+* Optional OpenDAP via ``skip_opendap`` setting
+* Retire GridFTP publishing DTN setting
+
+
+v5.2.3
+------
+
+* Update argument processing to make ``--cert`` an optional argument to align with changes in ESGF architecture
+* Bugfixes to support optional citation and further info URLs
+* Support of customized ``https_url`` in the configuration for non- ``thredds/fileServer`` endpoints.
+* Introduction of ``globus_url`` inclusion for direct link to the Globus file manager.
+* **BUGFIX** for a default ``esg.yaml`` under the ``.esg`` hidden directory
+
+
+v5.2.2
+------
+
+* **BUGFIX**: Fix path argument issues
+* **BUGFIX**: Several issues with reading time bounds and required tracking_id with xarray
+* Bug fixes for user-defined project and non-netCDF data support.
+* Documentaton update:
+  * Cleanup of configuration instructions
+  * Add example Notebooks
+
+v5.2.1
+------
+* **BUGFIX**:  Missing `import` caused ``esgpublish`` calls to fail in most cases.
+
+v5.2.0
+------
+
+* Migrated configuration from `.ini` format to `.yaml`.  Use `esgmigrate` to convert existing `.ini` files.
+* Added XArray for NetCDF file reading.  Disable autocurator in settings to use or add `--xarray`
+* Additionally refactoring done to support the above features.
+
 b5.1.0-b13
 ----------
 
