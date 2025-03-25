@@ -47,7 +47,7 @@ def get_args():
                         help="Primary email to send failure alerts, errors, and warnings to.")
     parser.add_argument("--llnl-email", dest="llnl_email", default="ames4@llnl.gov",
                         help="LLNL email address for SMTP to send alerts from.")
-    parser.add_argument("-i", "--ini", dest="ini_file", required=True,
+    parser.add_argument("--config", dest="ini_file", required=True,
                         help="Override config file for publication. Please use complete file path.")
 
     args = parser.parse_args()
@@ -71,7 +71,7 @@ LLNL_EMAIL = args.llnl_email
 EMAIL = args.email
 INI_FILE = args.ini_file
 INC_DIR = args.inc_dir
-print(INI_FILE)
+print(f"DEBUG INI: {INI_FILE}")
 
 def check_errata(pid):
     get_error = "http://errata.es-doc.org/1/resolve/simple-pid?datasets={}".format(pid)
@@ -224,7 +224,7 @@ def main():
             maps.append(fullmap)
             log = TMP_DIR + f + ".log"
             logs.append(log)
-            pub_cmd = ["esgpublish","--no-auth" ,"--ini", INI_FILE, "--map", fullmap]
+            pub_cmd = ["esgpublish","--no-auth" ,"--config", INI_FILE, "--map", fullmap]
             jobs.append(pub_cmd)
             gotosleep = False
             check_flag()
