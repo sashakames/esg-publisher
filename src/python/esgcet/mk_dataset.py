@@ -325,8 +325,8 @@ class ESGPubMakeDataset:
     def set_variables(self, record, scanobj):
         variables = self.handler.get_variables(scanobj)
         # use the correct facet id string to get the variable if pre-specified in the record
-        vid = record[self.variable_name]
-        if vid in variables:
+        vid = record.get(self.variable_name, None)
+        if vid and vid in variables:
             var_rec = variables[vid]
             if "long_name" in var_rec:
                 record["variable_long_name"] = var_rec["long_name"]
@@ -339,6 +339,9 @@ class ESGPubMakeDataset:
             record[self.variable_name] = vid
             if self.variable_name == "variable_id":
                 record["variable"] = vid
+        elif vid:
+            if self.variable_name == "variable_id":
+                record["variable"] = vid        
         else:
             var_list = self.handler.get_variable_list(variables)
             if len(var_list) < VARIABLE_LIMIT:
