@@ -208,6 +208,7 @@ class ESGSTACConverter:
         east_degrees = dataset_doc.get("east_degrees", 180.0)
         north_degrees = dataset_doc.get("north_degrees", 90.0)
 
+        base_id_value = dataset_doc.get("master_id", "")
         if namespace.startswith("cmip"):
             west_degrees -= 180
             east_degrees -= 180
@@ -240,6 +241,7 @@ class ESGSTACConverter:
         )
         property_keys = STAC_item_properties + collection_item_properties
 
+        
         for k in property_keys:
             v = None
             if (
@@ -252,9 +254,7 @@ class ESGSTACConverter:
                 v = dataset_doc.get(k, None)
             else:
                 self.publog.warning(f"{k} not found in dataset")
-            if k == "master_id":
-                nk = "base_id"
-            elif k in STAC_item_properties:
+            if k in STAC_item_properties:
                 nk = k
             elif k in collection_item_properties:
                 nk = f"{namespace}:{k}"
@@ -306,6 +306,8 @@ class ESGSTACConverter:
                 # "http://host.docker.internal/file/v2.1.0/schema.json"
             ],
             "id": item_id,
+            "base_id" : base_id_value,
+            "version" : dataset_doc.get("version", ""),
             "geometry": {
                 "type": "Polygon",
                 "coordinates": [
@@ -344,8 +346,10 @@ class ESGSTACConverter:
             ],
             "properties": properties,
             "assets": assets,
+
         }
 
+        
         if "citation_url" in dataset_doc:
             item["links"].append(self.citation_link_d(dataset_doc["citation_url"]))
         else:

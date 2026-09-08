@@ -351,8 +351,7 @@ STAC_item_properties = [
     "latest",
     "version",
     "project",
-    "title",
-    "master_id" # note this is legacy and converted to base_id
+    "title"
 ]
 
 
@@ -361,7 +360,7 @@ MAP_properties = {
  "CMIP7" : {
      "variable_cf_standard_name" : "cf_standard_name",
      "variable_branded_name" : "branded_variable",
-     
+     "variable_branded_suffix" :  "variable_branding_suffix"
  }   ,
     "CMIP6" : {
     "variable_cf_standard_name" : "cf_standard_name",
@@ -391,12 +390,11 @@ STAC_proj_item_properties = {
         "variable_long_name",
         "variable_units",
         "variant_label",
-        "variable_branding_suffix",
+        "variable_branded_suffix",
         "Conventions",
         "license_id",
         "mip_era",
         "variable_branded_name",
-        "variable_cf_standard_name",
         "temporal_label",
         "vertical_label",
         "forcing_index",
