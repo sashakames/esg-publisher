@@ -1,5 +1,24 @@
 # Conda-Forge Release Instructions
 
+**⚠️ STATUS: ON HOLD**
+
+As of v5.5.2, esgcet cannot be published to conda-forge due to missing upstream dependencies:
+- `esgfpid` - ESGF PID client (PyPI only)
+- `esgvoc` - ESGF controlled vocabulary (PyPI only)
+- `cc-plugin-wcrp` - WCRP compliance checker (PyPI only)
+- `virtualizarr` - Kerchunk integration (PyPI only)
+
+**Current installation:** `pip install esgcet`
+
+**To enable conda-forge in the future:**
+1. Submit conda recipes for the 4 missing dependencies, OR
+2. Make these dependencies optional in esgcet, OR
+3. Wait for upstream projects to publish to conda-forge
+
+**Previous attempt:** PR #34819 (closed due to dependency issues)
+
+---
+
 This guide covers one-off conda-forge releases. For automated releases, see the end of this document.
 
 ## Prerequisites
