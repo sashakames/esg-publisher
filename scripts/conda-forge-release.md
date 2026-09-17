@@ -1,25 +1,66 @@
 # Conda-Forge Release Instructions
 
-**⚠️ STATUS: ON HOLD**
+**✅ STATUS: ACTIVE (as of Sept 2026)**
 
-As of v5.5.2, esgcet cannot be published to conda-forge due to missing upstream dependencies:
-- `esgfpid` - ESGF PID client (PyPI only)
-- `esgvoc` - ESGF controlled vocabulary (PyPI only)
-- `cc-plugin-wcrp` - WCRP compliance checker (PyPI only)
-- `virtualizarr` - Kerchunk integration (PyPI only)
+The esgcet feedstock is now live on conda-forge thanks to @cofinoa who submitted all dependencies together in PR #34858!
 
-**Current installation:** `pip install esgcet`
+**Current maintainers:**
+- @sashakames (you)
+- @cofinoa
 
-**To enable conda-forge in the future:**
-1. Submit conda recipes for the 4 missing dependencies, OR
-2. Make these dependencies optional in esgcet, OR
-3. Wait for upstream projects to publish to conda-forge
+**Feedstocks created:**
+- https://github.com/conda-forge/esgcet-feedstock
+- https://github.com/conda-forge/esgfpid-feedstock
+- https://github.com/conda-forge/esgvoc-feedstock
+- https://github.com/conda-forge/cc-plugin-wcrp-feedstock
 
-**Previous attempt:** PR #34819 (closed due to dependency issues)
+**Installation:**
+```bash
+conda install -c conda-forge esgcet
+# or
+pip install esgcet
+```
 
 ---
 
-This guide covers one-off conda-forge releases. For automated releases, see the end of this document.
+## Automated Release Process (Recommended)
+
+The **regro-cf-autotick-bot** automatically monitors PyPI and creates update PRs. This is the easiest way!
+
+### How It Works
+
+1. **You release to PyPI** (using `./scripts/release.sh X.Y.Z`)
+2. **Bot detects the new version** (usually within 24 hours)
+3. **Bot creates a PR** to https://github.com/conda-forge/esgcet-feedstock
+4. **You review and merge** the bot's PR
+5. **Package auto-publishes** to conda-forge
+
+### Your Workflow for Each Release
+
+```bash
+# 1. Release to PyPI (as usual)
+./scripts/release.sh 5.5.4
+
+# 2. Wait for bot PR (check: https://github.com/conda-forge/esgcet-feedstock/pulls)
+
+# 3. Review the bot's PR:
+#    - Verify version number
+#    - Check SHA256 hash matches PyPI
+#    - Ensure dependencies are correct
+#    - Wait for CI to pass
+
+# 4. Merge the bot's PR
+
+# 5. Done! Package will be on conda-forge in ~1 hour
+```
+
+**That's it!** No manual recipe updates needed.
+
+---
+
+## Manual Update (If Bot Doesn't Trigger)
+
+If the bot doesn't create a PR within 48 hours, you can do it manually.
 
 ## Prerequisites
 
